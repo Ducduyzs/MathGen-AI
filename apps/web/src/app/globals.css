@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+/* Màu chủ đạo: trắng + xanh dương nhạt.
+   brand-50…300 dùng cho nền, viền, điểm nhấn; brand-600 cho nút chính (tương phản ≥ 4.5:1 với chữ trắng). */
+@theme {
+  --color-brand-50: #f0f8ff;
+  --color-brand-100: #e0f0ff;
+  --color-brand-200: #c2e1ff;
+  --color-brand-300: #93c9f8;
+  --color-brand-400: #5aaef0;
+  --color-brand-500: #2e93e6;
+  --color-brand-600: #1874c4;
+  --color-brand-700: #145fa3;
+  --color-brand-800: #124d84;
+  --color-brand-900: #113e69;
+
+  --color-ink: #10283f;
+  --color-muted: #587089;
+  --color-line: #dbe9f6;
+  --color-surface: #f6faff;
+
+  --color-success-50: #ecf9f1;
+  --color-success-200: #b7e6c9;
+  --color-success-600: #1e8a4c;
+  --color-success-700: #17703d;
+
+  --color-danger-50: #fdeeee;
+  --color-danger-200: #f5c2c2;
+  --color-danger-600: #c93838;
+  --color-danger-700: #a82c2c;
+
+  --color-warning-50: #fff7e8;
+  --color-warning-200: #f8dcaa;
+  --color-warning-700: #9a6212;
+}
+
+@theme inline {
+  --font-sans: var(--font-be-vietnam), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  body {
+    @apply bg-white text-ink antialiased;
+  }
+  ::selection {
+    background: var(--color-brand-200);
+  }
+}
+
+.katex {
+  font-size: 1.08em;
+}

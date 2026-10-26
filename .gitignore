@@ -1,0 +1,31 @@
+# Node / Next.js
+node_modules/
+.next/
+apps/web/out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Biến môi trường cục bộ (có thể chứa bí mật)
+.env
+.env*.local
+
+# Python
+.venv/
+__pycache__/
+
+# Dữ liệu và trọng số mô hình: tạo lại bằng script (xem ml/README.md)
+ml/data/raw/
+ml/data/unified/
+ml/data/splits/
+ml/data/splits_with_flagged/
+ml/runs/**/model.pt
+ml/runs/**/adapter/
+ml/runs/**/tokenizer/
+*.part
+
+# Hệ điều hành / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+~$*

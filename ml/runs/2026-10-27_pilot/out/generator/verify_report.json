@@ -1,0 +1,214 @@
+{
+  "input": "../../ml/runs/2026-10-27_pilot/out/generator/samples.jsonl",
+  "vi": {
+    "total": 300,
+    "verdicts": {
+      "bank_duplicate": 7,
+      "ok": 70,
+      "out_of_scope": 170,
+      "unsolvable": 12,
+      "wrong_answer": 41
+    },
+    "by_relation": {
+      "rule": {
+        "bank_duplicate": 3,
+        "ok": 27,
+        "unsolvable": 10,
+        "wrong_answer": 10
+      },
+      "template": {
+        "bank_duplicate": 4,
+        "ok": 43,
+        "out_of_scope": 170,
+        "unsolvable": 2,
+        "wrong_answer": 31
+      }
+    },
+    "rates": {
+      "json_valid": "100.0%",
+      "in_scope_of_verifier": "43.3%",
+      "recognized_of_in_scope": "100.0%",
+      "answer_correct_of_solvable": "65.3%",
+      "fully_valid_of_in_scope": "53.8%"
+    }
+  },
+  "en": {
+    "total": 60,
+    "json_valid": "100.0%"
+  },
+  "failures": [
+    {
+      "id": "synthetic_vi:tplpair:1526",
+      "relation": "template",
+      "verdict": "wrong_answer",
+      "statement": "Giải phương trình $\\dfrac{x + 14}{5} = \\dfrac{x + 7}{3}$.",
+      "answer": "$x = -8$",
+      "expected": "$x = \\dfrac{7}{2}$"
+    },
+    {
+      "id": "synthetic_vi:rulepair:7019",
+      "relation": "rule",
+      "verdict": "bank_duplicate",
+      "statement": "Biết $x^2 - 5x + 6 = (x - a)(x - b)$ với $a < b$. Tìm $b$.",
+      "answer": "$b = 3$"
+    },
+    {
+      "id": "synthetic_vi:rulepair:6777",
+      "relation": "rule",
+      "verdict": "unsolvable",
+      "statement": "Tìm số nguyên $x$ lớn nhất thỏa mãn $7x - 3 \\ge 28$.",
+      "answer": "$x = 5$"
+    },
+    {
+      "id": "synthetic_vi:tplpair:1870",
+      "relation": "template",
+      "verdict": "wrong_answer",
+      "statement": "Tìm số nguyên $x$ nhỏ nhất thỏa mãn $4x - 7 > 1$.",
+      "answer": "$x = 2$",
+      "expected": "$x = 3$"
+    },
+    {
+      "id": "synthetic_vi:tplpair:1948",
+      "relation": "template",
+      "verdict": "wrong_answer",
+      "statement": "Tìm số nguyên $x$ nhỏ nhất thỏa mãn $5x + 6 > 9$.",
+      "answer": "$x = 0$",
+      "expected": "$x = 1$"
+    },
+    {
+      "id": "synthetic_vi:tplpair:1556",
+      "relation": "template",
+      "verdict": "wrong_answer",
+      "statement": "Giải phương trình $\\dfrac{x + 27}{8} = \\dfrac{x + 19}{6}$.",
+      "answer": "$x = 1$",
+      "expected": "$x = 5$"
+    },
+    {
+      "id": "synthetic_vi:rulepair:7348",
+      "relation": "rule",
+      "verdict": "unsolvable",
+      "statement": "Tìm giá trị nhỏ nhất của hàm số $y = -x^2 - 6x + 9$.",
+      "answer": "A. $y_{\\min} = 18$ khi $x = -3$"
+    },
+    {
+      "id": "synthetic_vi:rulepair:6811",
+      "relation": "rule",
+      "verdict": "unsolvable",
+      "statement": "Giải bất phương trình $-5x^2 + 19x - 6 < 0$.",
+      "answer": "$S = \\left(\\dfrac{2}{5};\\ \\dfrac{3}{2}\\right)$"
+    },
+    {
+      "id": "synthetic_vi:rulepair:7437",
+      "relation": "rule",
+      "verdict": "wrong_answer",
+      "statement": "Tìm giá trị nhỏ nhất của hàm số $y = x^2 + 6x + 3$.",
+      "answer": "$y_{\\min} = -9$ khi $x = -3$",
+      "expected": "$y_{\\min} = -6$ khi $x = -3$"
+    },
+    {
+      "id": "synthetic_vi:tplpair:1379",
+      "relation": "template",
+      "verdict": "wrong_answer",
+      "statement": "Giải phương trình $9x + 2 = -56$.",
+      "answer": "$x = -7$",
+      "expected": "$x = -\\dfrac{58}{9}$"
+    },
+    {
+      "id": "synthetic_vi:tplpair:2002",
+      "relation": "template",
+      "verdict": "unsolvable",
+      "statement": "Tìm nghiệm lớn nhất của phương trình $x^2 + x - 54 = 0$.",
+      "answer": "$x = 6$"
+    },
+    {
+      "id": "synthetic_vi:rulepair:6598",
+      "relation": "rule",
+      "verdict": "wrong_answer",
+      "statement": "Tìm $m$ để phương trình $-3x^2 - x + m = 0$ có hai nghiệm phân biệt.",
+      "answer": "$m < \\dfrac{1}{18}$",
+      "expected": "$m > -\\dfrac{1}{12}$"
+    },
+    {
+      "id": "synthetic_vi:tplpair:46",
+      "relation": "template",
+      "verdict": "wrong_answer",
+      "statement": "Nghiệm của phương trình $7x + 6 = -38$ là",
+      "answer": "D. $x = -6$",
+      "expected": "$x = -\\dfrac{44}{7}$"
+    },
+    {
+      "id": "synthetic_vi:rulepair:6599",
+      "relation": "rule",
+      "verdict": "wrong_answer",
+      "statement": "Tìm $m$ để phương trình $-5x^2 - 13x + m = 0$ có hai nghiệm phân biệt.",
+      "answer": "$m < \\dfrac{69}{20}$",
+      "expected": "$m > -\\dfrac{169}{20}$"
+    },
+    {
+      "id": "synthetic_vi:tplpair:44",
+      "relation": "template",
+      "verdict": "wrong_answer",
+      "statement": "Nghiệm của phương trình $6x + 10 = -26$ là",
+      "answer": "D. $x = -5$",
+      "expected": "$x = -6$"
+    }
+  ],
+  "examples_ok": [
+    {
+      "id": "synthetic_vi:tplpair:2533",
+      "relation": "template",
+      "verdict": "ok",
+      "statement": "Tìm giá trị nhỏ nhất của hàm số $y = x^2 + 6x + 7$.",
+      "answer": "$y_{\\min} = -2$"
+    },
+    {
+      "id": "synthetic_vi:tplpair:432",
+      "relation": "template",
+      "verdict": "ok",
+      "statement": "Phân tích đa thức $x^2 - 8x + 15$ thành nhân tử.",
+      "answer": "D. $(x - 3)(x - 5)$"
+    },
+    {
+      "id": "synthetic_vi:rulepair:7436",
+      "relation": "rule",
+      "verdict": "ok",
+      "statement": "Tìm giá trị nhỏ nhất của hàm số $y = x^2 + 6x - 4$.",
+      "answer": "$y_{\\min} = -13$ khi $x = -3$"
+    },
+    {
+      "id": "synthetic_vi:rulepair:7461",
+      "relation": "rule",
+      "verdict": "ok",
+      "statement": "Tìm giá trị nhỏ nhất của hàm số $y = x^2 + 6x - 3$.",
+      "answer": "C. $y_{\\min} = -12$ khi $x = -3$"
+    },
+    {
+      "id": "synthetic_vi:tplpair:1391",
+      "relation": "template",
+      "verdict": "ok",
+      "statement": "Giải phương trình $6x - 4 = -8$.",
+      "answer": "$x = -\\dfrac{2}{3}$"
+    },
+    {
+      "id": "synthetic_vi:tplpair:409",
+      "relation": "template",
+      "verdict": "ok",
+      "statement": "Phân tích đa thức $x^2 - 8x + 15$ thành nhân tử.",
+      "answer": "D. $(x - 3)(x - 5)$"
+    },
+    {
+      "id": "synthetic_vi:tplpair:427",
+      "relation": "template",
+      "verdict": "ok",
+      "statement": "Phân tích đa thức $x^2 - 8x + 15$ thành nhân tử.",
+      "answer": "C. $(x - 3)(x - 5)$"
+    },
+    {
+      "id": "synthetic_vi:tplpair:2493",
+      "relation": "template",
+      "verdict": "ok",
+      "statement": "Tìm giá trị nhỏ nhất của hàm số $y = x^2 - 8x + 6$.",
+      "answer": "$y_{\\min} = -10$"
+    }
+  ]
+}

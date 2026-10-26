@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+# Dữ liệu tải về / sinh ra: tạo lại bằng scripts, không commit
+data/raw/
+data/unified/
+data/splits/
+data/splits_with_flagged/
+*.part
+
+# Trọng số mô hình (lớn): giữ ngoài git, lưu bản sao ở nơi khác (HF Hub / ổ chung)
+runs/**/model.pt
+runs/**/adapter/

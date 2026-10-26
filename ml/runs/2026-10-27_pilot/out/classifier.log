@@ -1,0 +1,145 @@
+train 77017 · val 2963 · test 3109 · test_unseen_templates 1033
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 6465.37it/s]
+[transformers] [1mXLMRobertaModel LOAD REPORT[0m from: FacebookAI/xlm-roberta-base
+Key                       | Status     |  | 
+--------------------------+------------+--+-
+lm_head.dense.weight      | UNEXPECTED |  | 
+lm_head.layer_norm.weight | UNEXPECTED |  | 
+lm_head.bias              | UNEXPECTED |  | 
+lm_head.dense.bias        | UNEXPECTED |  | 
+lm_head.layer_norm.bias   | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+epoch 1 step 100/3612 loss 1.7324 · 0.4 phút
+epoch 1 step 200/3612 loss 0.8066 · 0.8 phút
+epoch 1 step 300/3612 loss 0.3305 · 1.1 phút
+epoch 1 step 400/3612 loss 0.4308 · 1.5 phút
+epoch 1 step 500/3612 loss 0.1657 · 1.8 phút
+epoch 1 step 600/3612 loss 0.2126 · 2.2 phút
+epoch 1 step 700/3612 loss 0.0869 · 2.6 phút
+epoch 1 step 800/3612 loss 0.2208 · 3.0 phút
+epoch 1 step 900/3612 loss 0.0467 · 3.3 phút
+epoch 1 step 1000/3612 loss 0.0159 · 3.7 phút
+epoch 1 step 1100/3612 loss 0.0923 · 4.1 phút
+epoch 1 step 1200/3612 loss 0.0112 · 4.4 phút
+== epoch 1 val: {"n": 2963, "topic": {"n": 792, "acc": 1.0, "macro_f1": 1.0, "keyword_baseline_acc": 0.8447, "acc_by_source": {"synthetic_vi": 1.0, "svamp": 1.0}}, "grade_band": {"n": 2923, "acc": 0.9737, "macro_f1": 0.9803}, "grade": {"n": 752, "acc": 1.0, "macro_f1": 1.0, "within_1": 1.0}, "difficulty": {"n": 752, "mae": 0.0249, "spearman": 0.9679}}
+   lưu mô hình tốt nhất (điểm 0.9934)
+epoch 2 step 1300/3612 loss 0.0460 · 4.9 phút
+epoch 2 step 1400/3612 loss 0.0168 · 5.3 phút
+epoch 2 step 1500/3612 loss 0.0190 · 5.7 phút
+epoch 2 step 1600/3612 loss 0.1038 · 6.1 phút
+epoch 2 step 1700/3612 loss 0.0531 · 6.5 phút
+epoch 2 step 1800/3612 loss 0.0243 · 6.9 phút
+epoch 2 step 1900/3612 loss 0.0074 · 7.3 phút
+epoch 2 step 2000/3612 loss 0.0161 · 7.7 phút
+epoch 2 step 2100/3612 loss 0.0509 · 8.1 phút
+epoch 2 step 2200/3612 loss 0.0359 · 8.5 phút
+epoch 2 step 2300/3612 loss 0.0865 · 8.9 phút
+epoch 2 step 2400/3612 loss 0.0132 · 9.3 phút
+== epoch 2 val: {"n": 2963, "topic": {"n": 792, "acc": 1.0, "macro_f1": 1.0, "keyword_baseline_acc": 0.8447, "acc_by_source": {"synthetic_vi": 1.0, "svamp": 1.0}}, "grade_band": {"n": 2923, "acc": 0.9822, "macro_f1": 0.9868}, "grade": {"n": 752, "acc": 1.0, "macro_f1": 1.0, "within_1": 1.0}, "difficulty": {"n": 752, "mae": 0.0339, "spearman": 0.9588}}
+   lưu mô hình tốt nhất (điểm 0.9956)
+epoch 3 step 2500/3612 loss 0.0158 · 9.8 phút
+epoch 3 step 2600/3612 loss 0.0198 · 10.2 phút
+epoch 3 step 2700/3612 loss 0.0047 · 10.6 phút
+epoch 3 step 2800/3612 loss 0.0049 · 11.0 phút
+epoch 3 step 2900/3612 loss 0.0063 · 11.4 phút
+epoch 3 step 3000/3612 loss 0.0043 · 11.8 phút
+epoch 3 step 3100/3612 loss 0.0048 · 12.1 phút
+epoch 3 step 3200/3612 loss 0.0028 · 12.5 phút
+epoch 3 step 3300/3612 loss 0.0026 · 12.9 phút
+epoch 3 step 3400/3612 loss 0.1185 · 13.3 phút
+epoch 3 step 3500/3612 loss 0.0073 · 13.7 phút
+epoch 3 step 3600/3612 loss 0.0036 · 14.1 phút
+== epoch 3 val: {"n": 2963, "topic": {"n": 792, "acc": 1.0, "macro_f1": 1.0, "keyword_baseline_acc": 0.8447, "acc_by_source": {"synthetic_vi": 1.0, "svamp": 1.0}}, "grade_band": {"n": 2923, "acc": 0.9846, "macro_f1": 0.9886}, "grade": {"n": 752, "acc": 1.0, "macro_f1": 1.0, "within_1": 1.0}, "difficulty": {"n": 752, "mae": 0.027, "spearman": 0.9762}}
+   lưu mô hình tốt nhất (điểm 0.9962)
+== KẾT QUẢ CUỐI
+{
+  "val": {
+    "n": 2963,
+    "topic": {
+      "n": 792,
+      "acc": 1.0,
+      "macro_f1": 1.0,
+      "keyword_baseline_acc": 0.8447,
+      "acc_by_source": {
+        "synthetic_vi": 1.0,
+        "svamp": 1.0
+      }
+    },
+    "grade_band": {
+      "n": 2923,
+      "acc": 0.9846,
+      "macro_f1": 0.9886
+    },
+    "grade": {
+      "n": 752,
+      "acc": 1.0,
+      "macro_f1": 1.0,
+      "within_1": 1.0
+    },
+    "difficulty": {
+      "n": 752,
+      "mae": 0.027,
+      "spearman": 0.9762
+    }
+  },
+  "test": {
+    "n": 3109,
+    "topic": {
+      "n": 1067,
+      "acc": 1.0,
+      "macro_f1": 1.0,
+      "keyword_baseline_acc": 0.6345,
+      "acc_by_source": {
+        "svamp": 1.0,
+        "synthetic_vi": 1.0
+      }
+    },
+    "grade_band": {
+      "n": 2788,
+      "acc": 0.9831,
+      "macro_f1": 0.9877
+    },
+    "grade": {
+      "n": 746,
+      "acc": 1.0,
+      "macro_f1": 1.0,
+      "within_1": 1.0
+    },
+    "difficulty": {
+      "n": 746,
+      "mae": 0.0268,
+      "spearman": 0.9735
+    }
+  },
+  "test_unseen_templates": {
+    "n": 1033,
+    "topic": {
+      "n": 1033,
+      "acc": 0.4095,
+      "macro_f1": 0.4552,
+      "keyword_baseline_acc": 0.2081,
+      "acc_by_source": {
+        "synthetic_vi": 0.4095
+      }
+    },
+    "grade_band": {
+      "n": 1033,
+      "acc": 0.4327,
+      "macro_f1": 0.3184
+    },
+    "grade": {
+      "n": 1033,
+      "acc": 0.4095,
+      "macro_f1": 0.453,
+      "within_1": 0.4095
+    },
+    "difficulty": {
+      "n": 1033,
+      "mae": 0.1528,
+      "spearman": -0.2595
+    }
+  }
+}

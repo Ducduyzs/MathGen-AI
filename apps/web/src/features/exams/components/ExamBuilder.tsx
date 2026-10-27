@@ -11,6 +11,8 @@ import { errorMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 import type { ExamMode } from "@/types/api";
 import { useCreateExam, useSkills } from "../api";
+import { useAuth } from "@/features/auth";
+import { skillInStage } from "@/lib/grades";
 import { EXAM_SIZES, MINUTES_PER_QUESTION } from "../model";
 
 const MODES: { mode: ExamMode; icon: LucideIcon; title: string; text: string }[] = [
@@ -20,7 +22,10 @@ const MODES: { mode: ExamMode; icon: LucideIcon; title: string; text: string }[]
 
 export function ExamBuilder() {
   const router = useRouter();
+  const { user } = useAuth();
   const skills = useSkills();
+  // Học sinh chỉ thấy chủ đề đúng cấp học; giáo viên thấy tất cả
+  const shown = skills.data?.filter((s) => user?.role !== "student" || skillInStage(s, user.grade));
   const create = useCreateExam();
   const [mode, setMode] = useState<ExamMode>("choice");
   const [size, setSize] = useState(20);
@@ -87,7 +92,7 @@ export function ExamBuilder() {
           <Chip selected={picked.length === 0} onClick={() => setPicked([])}>
             Tất cả
           </Chip>
-          {skills.data?.map((s) => (
+          {shown?.map((s) => (
             <Chip key={s.code} selected={picked.includes(s.code)} onClick={() => toggleSkill(s.code)}>
               {s.name}
             </Chip>

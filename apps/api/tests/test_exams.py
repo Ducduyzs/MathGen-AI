@@ -47,14 +47,14 @@ def test_cung_seed_thi_cung_de():
 
 
 def test_khop_danh_sach_dang_bai_cua_frontend():
-    """42 dạng bài của backend khớp với bộ sinh đề trong mock (mã, kỹ năng, hình thức, loại câu)."""
+    """62 dạng bài của backend khớp với bộ sinh đề trong mock (mã, kỹ năng, hình thức, loại câu)."""
     if not WEB_MOCKS.exists():
         pytest.skip("không có apps/web")
-    src = (WEB_MOCKS / "exam-generator.ts").read_text(encoding="utf8") + (WEB_MOCKS / "thpt-templates.ts").read_text(encoding="utf8")
+    src = "".join((WEB_MOCKS / f).read_text(encoding="utf8") for f in ("exam-generator.ts", "thpt-templates.ts", "primary-templates.ts"))
     pat = re.compile(r'code: "(\w+)", name: "([^"]+)", skill: "(\w+)", grade: (\d+), difficulty: ([\d.]+), mode: "(\w+)", type: "(\w+)"')
     web = {m[0]: (m[1], m[2], int(m[3]), float(m[4]), m[5], m[6]) for m in pat.findall(src)}
     api = {t.code: (t.name, t.skill, t.grade, t.difficulty, t.mode, t.type) for t in TEMPLATES}
-    assert len(api) == 42 and api == web
+    assert len(api) == 62 and api == web
 
 
 def test_de_thpt_dung_cau_truc_va_phu_du_chu_de():
@@ -172,4 +172,4 @@ async def test_lich_su_de_va_quyen_xem(client, student, teacher):
     assert (await client.post(f"/api/exams/{e['id']}/submit", json={"answers": {}}, headers=teacher)).status_code == 404
     assert (await client.get("/api/exams")).status_code == 401
     templates = (await client.get("/api/exams/templates", headers=student)).json()
-    assert len(templates) == 42 and sum("part" in t for t in templates) == 25
+    assert len(templates) == 62 and sum("part" in t for t in templates) == 25 and sum(t["grade"] <= 5 for t in templates) == 20

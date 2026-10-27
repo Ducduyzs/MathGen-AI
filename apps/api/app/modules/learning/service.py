@@ -56,7 +56,9 @@ async def next_problem(db: AsyncSession, redis: Redis, user: User, skill: str | 
         skill = (await bank.get_problem(db, similar_to)).skill_code
     scores = await _scores(db, user.id)
     if not skill:
-        available = await bank.skills_with_problems(db)
+        # Tự chọn kỹ năng: chỉ trong cấp học của học sinh (lớp 9 không gặp bài cộng trừ lớp 1)
+        stage = {s.code for s in await bank.skills(db) if bank.suits(s, user.grade)}
+        available = [c for c in await bank.skills_with_problems(db) if c in stage]
         if not available:
             raise ApiError(404, "no_problem")
         weights = [1.05 - (scores[c].score if c in scores else 0.5) for c in available]
@@ -64,6 +66,8 @@ async def next_problem(db: AsyncSession, redis: Redis, user: User, skill: str | 
     pool = await bank.approved_pool(db, skill)
     if not pool:
         raise ApiError(404, "no_problem")
+    if user.grade:  # ưu tiên bài không vượt quá lớp trên kế tiếp của học sinh
+        pool = [p for p in pool if p.grade <= user.grade + 1] or pool
     recent = await _recent(redis, user.id)
     fresh = [p for p in pool if p.id not in recent] or [p for p in pool if not recent or p.id != recent[0]] or pool
     ability = scores[skill].score if skill in scores else 0.5
@@ -141,7 +145,7 @@ async def activity_by_user(db: AsyncSession, user_ids: list[str], days: int) -> 
 async def progress(db: AsyncSession, user: User) -> ProgressOut:
     goal = get_settings().daily_goal
     scores = await _scores(db, user.id)
-    skills = await bank.skills(db)
+    skills = [s for s in await bank.skills(db) if bank.for_grade(s, user.grade)]
     # Một truy vấn cho cả tổng số và số đúng
     total, correct = (await db.execute(
         select(func.count(), func.count().filter(Attempt.is_correct.is_(True))).where(Attempt.user_id == user.id)

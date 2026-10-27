@@ -9,7 +9,7 @@ export default function RegisterPage() {
   return (
     <Card className="p-6 sm:p-8">
       <h1 className="text-2xl font-bold text-ink">Tạo tài khoản</h1>
-      <p className="mt-1 text-muted">Miễn phí cho học sinh lớp 6–12.</p>
+      <p className="mt-1 text-muted">Miễn phí cho học sinh lớp 1–12.</p>
       <div className="mt-6">
         <RegisterForm />
       </div>

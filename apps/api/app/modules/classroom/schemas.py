@@ -13,7 +13,7 @@ AssignmentStatus = Literal["todo", "in_progress", "submitted", "late", "missed"]
 
 class CreateClassIn(BaseModel):
     name: str = Field(min_length=2, max_length=120)
-    grade: int | None = Field(default=None, ge=6, le=12)
+    grade: int | None = Field(default=None, ge=1, le=12)
 
 
 class JoinClassIn(BaseModel):

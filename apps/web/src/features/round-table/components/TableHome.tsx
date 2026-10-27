@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { Input, Label } from "@/components/ui/input";
+import { useAuth } from "@/features/auth";
 import { errorMessage } from "@/lib/api/errors";
+import { isPrimary } from "@/lib/grades";
 import type { ArenaPool } from "@/types/api";
 import { useCreateRoom, useJoinRoom } from "../api";
 
@@ -25,7 +27,8 @@ export function TableHome() {
   const router = useRouter();
   const create = useCreateRoom();
   const join = useJoinRoom();
-  const [pool, setPool] = useState<ArenaPool>("basic");
+  const { user } = useAuth();
+  const [pool, setPool] = useState<ArenaPool>(() => (isPrimary(user?.grade) ? "primary" : "basic"));
   const [rounds, setRounds] = useState(10);
   const [code, setCode] = useState("");
 
@@ -56,8 +59,11 @@ export function TableHome() {
             <div>
               <p className="mb-2 text-sm font-medium text-ink">Bộ câu hỏi</p>
               <div className="flex flex-wrap gap-2">
+                <Chip selected={pool === "primary"} onClick={() => setPool("primary")}>
+                  Tiểu học (lớp 1–5) · 30 giây/câu
+                </Chip>
                 <Chip selected={pool === "basic"} onClick={() => setPool("basic")}>
-                  Cơ bản (lớp 6–10) · 30 giây/câu
+                  Đại số (lớp 6–10) · 30 giây/câu
                 </Chip>
                 <Chip selected={pool === "thpt"} onClick={() => setPool("thpt")}>
                   Ôn thi THPT · 45 giây/câu

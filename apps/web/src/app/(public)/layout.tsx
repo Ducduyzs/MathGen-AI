@@ -9,7 +9,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       <footer className="border-t border-line bg-surface">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-6 text-sm text-muted">
           <span>© 2026 MathGen AI · Đề tài thực tập</span>
-          <span>Toán lớp 6–12 · Đại số</span>
+          <span>Toán lớp 1–12</span>
         </div>
       </footer>
     </div>

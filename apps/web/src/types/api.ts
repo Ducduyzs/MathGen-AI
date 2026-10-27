@@ -28,6 +28,9 @@ export interface RegisterRequest {
 export interface Skill {
   code: string;
   name: string;
+  /** Khoảng lớp của kỹ năng (tiểu học: 1–5). */
+  grade_min?: number;
+  grade_max?: number;
 }
 
 export type AnswerType = "choice" | "number" | "set";
@@ -547,7 +550,7 @@ export interface UpdateProblemSetRequest {
 // ---- Đấu trường
 
 /** basic: Đại số lớp 8–10 · thpt: ôn thi tốt nghiệp THPT. */
-export type ArenaPool = "basic" | "thpt";
+export type ArenaPool = "primary" | "basic" | "thpt";
 export type ArenaDuration = 5 | 15 | 30;
 
 export interface ArenaItem {

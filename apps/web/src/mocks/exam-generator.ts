@@ -5,6 +5,7 @@ import {
   distinctPair, factor, frac, lin, makeChoices, nonZero, number, pick, poly, quad, r, rand, shuffle, sum, tf, coin,
   type ExamTemplate,
 } from "./gen-utils";
+import { PRIMARY_TEMPLATES } from "./primary-templates";
 import { buildThptTemplates, THPT_TEMPLATES } from "./thpt-templates";
 
 export type { ExamTemplate } from "./gen-utils";
@@ -244,7 +245,13 @@ const ALGEBRA_TEMPLATES: ExamTemplate[] = [
   },
 ];
 
-export const TEMPLATES: ExamTemplate[] = [...ALGEBRA_TEMPLATES, ...THPT_TEMPLATES];
+export const TEMPLATES: ExamTemplate[] = [...PRIMARY_TEMPLATES, ...ALGEBRA_TEMPLATES, ...THPT_TEMPLATES];
+
+/** Học sinh tiểu học (lớp 1–5). Chưa có lớp thì coi như từ lớp 6. */
+export const isPrimary = (grade: number | null | undefined) => grade != null && grade <= 5;
+
+/** Dạng bài hợp với học sinh: cùng cấp học; tiểu học chỉ tới lớp trên kế tiếp (lớp 2 không gặp phân số lớp 4). */
+export const forGrade = (t: ExamTemplate, grade: number | null | undefined) => (isPrimary(grade) ? t.grade <= grade! + 1 : t.grade > 5);
 
 const TYPE_ORDER: ExamQuestionType[] = ["choice", "true_false", "number"];
 
@@ -273,7 +280,7 @@ function draw(ts: ExamTemplate[], n: number) {
  * Đề ôn tập. Trắc nghiệm: ~20% câu Đúng/Sai, còn lại A/B/C/D. Tự luận: điền đáp số.
  * Khi truyền `templates` (đề từ dạng đã sai) thì lấy đúng các dạng đó, bất kể hình thức.
  */
-export function buildQuestions(mode: ExamMode, size: number, opts: { skills?: string[]; templates?: string[] }) {
+export function buildQuestions(mode: ExamMode, size: number, opts: { skills?: string[]; templates?: string[]; grade?: number | null }) {
   if (opts.templates?.length) {
     const pool = TEMPLATES.filter((t) => opts.templates!.includes(t.code));
     if (!pool.length) return null;
@@ -281,7 +288,10 @@ export function buildQuestions(mode: ExamMode, size: number, opts: { skills?: st
     return generate(chosen);
   }
 
-  const pool = TEMPLATES.filter((t) => t.mode === mode && (!opts.skills?.length || opts.skills.includes(t.skill)));
+  // Không chọn chủ đề: chỉ lấy dạng bài đúng cấp học của học sinh
+  const pool = TEMPLATES.filter(
+    (t) => t.mode === mode && (opts.skills?.length ? opts.skills.includes(t.skill) : forGrade(t, opts.grade)),
+  );
   if (!pool.length) return null;
   const tfPool = pool.filter((t) => t.type === "true_false");
   const mainPool = pool.filter((t) => t.type !== "true_false");

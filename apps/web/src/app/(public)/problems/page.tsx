@@ -5,7 +5,7 @@ import { getProblems, getSkills, ProblemCard, ProblemFilters, type ProblemQuery 
 
 export const metadata: Metadata = {
   title: "Ngân hàng bài Toán",
-  description: "Bài tập Đại số lớp 6–12 đã được kiểm chứng, lọc theo lớp, chủ đề và độ khó.",
+  description: "Bài tập Toán lớp 1–12 đã được kiểm chứng, lọc theo lớp, chủ đề và độ khó.",
 };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -21,7 +21,7 @@ export default async function ProblemsPage({ searchParams }: { searchParams: Sea
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <h1 className="text-3xl font-bold tracking-tight text-ink">Ngân hàng bài</h1>
-      <p className="mt-2 text-muted">Bài tập Đại số lớp 6–12, mỗi bài đều đã được bộ giải toán kiểm chứng.</p>
+      <p className="mt-2 text-muted">Bài tập Toán lớp 1–12, mỗi bài đều đã được bộ giải toán kiểm chứng.</p>
 
       <div className="mt-6">
         <ProblemFilters skills={skills ?? []} value={query} />

@@ -1,59 +1,137 @@
 {
   "skills": [
     {
+      "code": "p_number",
+      "name": "Số và so sánh số",
+      "sort": 0,
+      "grade_min": 1,
+      "grade_max": 3
+    },
+    {
+      "code": "p_add_sub",
+      "name": "Cộng, trừ",
+      "sort": 1,
+      "grade_min": 1,
+      "grade_max": 4
+    },
+    {
+      "code": "p_mul_div",
+      "name": "Nhân, chia",
+      "sort": 2,
+      "grade_min": 2,
+      "grade_max": 5
+    },
+    {
+      "code": "p_word",
+      "name": "Toán có lời văn",
+      "sort": 3,
+      "grade_min": 1,
+      "grade_max": 5
+    },
+    {
+      "code": "p_measure",
+      "name": "Đo lường",
+      "sort": 4,
+      "grade_min": 2,
+      "grade_max": 5
+    },
+    {
+      "code": "p_geometry",
+      "name": "Hình học tiểu học",
+      "sort": 5,
+      "grade_min": 3,
+      "grade_max": 5
+    },
+    {
+      "code": "p_fraction",
+      "name": "Phân số",
+      "sort": 6,
+      "grade_min": 4,
+      "grade_max": 5
+    },
+    {
+      "code": "p_decimal",
+      "name": "Số thập phân – Tỉ số phần trăm",
+      "sort": 7,
+      "grade_min": 5,
+      "grade_max": 5
+    },
+    {
       "code": "linear_equation",
       "name": "Phương trình bậc nhất",
-      "sort": 0
+      "sort": 8,
+      "grade_min": 6,
+      "grade_max": 10
     },
     {
       "code": "factorization",
       "name": "Phân tích nhân tử",
-      "sort": 1
+      "sort": 9,
+      "grade_min": 8,
+      "grade_max": 9
     },
     {
       "code": "quadratic_equation",
       "name": "Phương trình bậc hai",
-      "sort": 2
+      "sort": 10,
+      "grade_min": 9,
+      "grade_max": 10
     },
     {
       "code": "inequality",
       "name": "Bất phương trình",
-      "sort": 3
+      "sort": 11,
+      "grade_min": 8,
+      "grade_max": 10
     },
     {
       "code": "function",
       "name": "Hàm số",
-      "sort": 4
+      "sort": 12,
+      "grade_min": 9,
+      "grade_max": 12
     },
     {
       "code": "calculus",
       "name": "Đạo hàm – Tích phân",
-      "sort": 5
+      "sort": 13,
+      "grade_min": 11,
+      "grade_max": 12
     },
     {
       "code": "exp_log",
       "name": "Mũ – Logarit",
-      "sort": 6
+      "sort": 14,
+      "grade_min": 11,
+      "grade_max": 12
     },
     {
       "code": "sequences",
       "name": "Dãy số – Cấp số",
-      "sort": 7
+      "sort": 15,
+      "grade_min": 11,
+      "grade_max": 12
     },
     {
       "code": "geometry_space",
       "name": "Hình học không gian",
-      "sort": 8
+      "sort": 16,
+      "grade_min": 11,
+      "grade_max": 12
     },
     {
       "code": "coordinates_3d",
       "name": "Tọa độ Oxyz",
-      "sort": 9
+      "sort": 17,
+      "grade_min": 12,
+      "grade_max": 12
     },
     {
       "code": "probability_statistics",
       "name": "Xác suất – Thống kê",
-      "sort": 10
+      "sort": 18,
+      "grade_min": 10,
+      "grade_max": 12
     }
   ],
   "problems": [

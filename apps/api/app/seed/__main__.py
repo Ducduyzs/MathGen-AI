@@ -18,6 +18,7 @@ from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.core.security import hash_password
 from app.models import DailyActivity, ParentLink, Problem, ReviewItem, Skill, SkillScore, User
+from app.modules.exams.generator import PRIMARY, Rng
 from app.modules.ingestion.pipeline import hash_key, problem_key
 from app.modules.learning.service import today_vn
 
@@ -36,9 +37,37 @@ def with_hash(problems: list[dict]) -> list[dict]:
     return out
 
 
+PER_TEMPLATE = 10
+
+
+def primary_problems() -> list[dict]:
+    """Bài tiểu học cho ngân hàng (luyện tập): mỗi dạng lớp 1–5 sinh PER_TEMPLATE bài.
+
+    Hạt giống cố định theo mã dạng nên chạy lại seed ra đúng các bài cũ (id ổn định, ghi đè được).
+    """
+    out = []
+    for t in PRIMARY:
+        g, seen = Rng(f"seed:{t.code}"), set()
+        while len(seen) < PER_TEMPLATE:
+            q = t.make(g)
+            key = q["statement"] + json.dumps(q.get("choices"), ensure_ascii=False)  # cùng đề bài, khác phương án vẫn là bài khác
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append({
+                "id": f"g_{t.code}_{len(seen):02d}", "statement": q["statement"], "grade": t.grade, "skill_code": t.skill,
+                "difficulty": t.difficulty, "answer_type": q["answer"]["type"], "answer_prefix": q.get("answer_prefix"),
+                "choices": q.get("choices"), "hints": None, "answer": q["answer"], "answer_display": q["answer_display"],
+                "solution": q["solution"], "canonical_hash": None,
+            })
+    return out
+
+
 async def seed(db: AsyncSession, demo: bool) -> dict:
-    await db.execute(insert(Skill).values(DATA["skills"]).on_conflict_do_update(index_elements=["code"], set_={"name": insert(Skill).excluded.name, "sort": insert(Skill).excluded.sort}))
-    stmt = insert(Problem).values([{**p, "status": "approved", "origin": "seed"} for p in with_hash(DATA["problems"])])
+    skill = insert(Skill).values(DATA["skills"])
+    await db.execute(skill.on_conflict_do_update(index_elements=["code"], set_={c: skill.excluded[c] for c in ("name", "sort", "grade_min", "grade_max")}))
+    problems = [*with_hash(DATA["problems"]), *primary_problems()]
+    stmt = insert(Problem).values([{**p, "status": "approved", "origin": "seed"} for p in problems])
     cols = ("statement", "grade", "skill_code", "difficulty", "answer_type", "answer_prefix", "choices", "hints", "answer", "answer_display", "solution", "canonical_hash")
     await db.execute(stmt.on_conflict_do_update(index_elements=["id"], set_={c: stmt.excluded[c] for c in cols}))
     # INSERT nhiều dòng cần mọi dòng cùng tập cột: điền None cho trường tùy chọn (parent / source / transform / choices).
@@ -74,7 +103,7 @@ async def seed(db: AsyncSession, demo: bool) -> dict:
                 child = await db.scalar(select(User.id).where(User.email == email_of[u["parent_of"]]))
                 await db.execute(insert(ParentLink).values(parent_id=parent, student_id=child).on_conflict_do_nothing())
     await db.commit()
-    return {"skills": len(DATA["skills"]), "problems": len(DATA["problems"]), "review_items": len(DATA["review_items"]), "new_demo_users": users}
+    return {"skills": len(DATA["skills"]), "problems": len(problems), "review_items": len(DATA["review_items"]), "new_demo_users": users}
 
 
 async def main() -> None:

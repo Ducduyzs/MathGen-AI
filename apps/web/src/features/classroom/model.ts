@@ -11,7 +11,7 @@ export const STATUS: Record<AssignmentStatus, { label: string; tone: "brand" | "
 
 export const isOpen = (s: AssignmentStatus | undefined) => s === "todo" || s === "in_progress";
 
-export const GRADES = [6, 7, 8, 9, 10, 11, 12];
+export { GRADES } from "@/lib/grades";
 
 const dateTime = new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" });
 

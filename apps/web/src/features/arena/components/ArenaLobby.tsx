@@ -107,7 +107,7 @@ export function ArenaLobby() {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <Card className="p-5 sm:p-6">
           <CardTitle>Chọn kho câu</CardTitle>
-          <div role="radiogroup" aria-label="Kho câu" className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div role="radiogroup" aria-label="Kho câu" className="mt-3 grid gap-3 sm:grid-cols-3">
             {POOLS.map((p) => (
               <button
                 key={p.pool}

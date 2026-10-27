@@ -14,6 +14,9 @@ class Skill(Base):
     code: Mapped[str] = mapped_column(String(40), primary_key=True)
     name: Mapped[str] = mapped_column(String(120))
     sort: Mapped[int] = mapped_column(Integer, default=0)
+    # Khoảng lớp của kỹ năng: tiểu học 1–5, còn lại từ lớp 6
+    grade_min: Mapped[int] = mapped_column(Integer, default=6, server_default="6")
+    grade_max: Mapped[int] = mapped_column(Integer, default=12, server_default="12")
 
 
 class Problem(Timestamped, Base):

@@ -1,13 +1,23 @@
 """Bộ sinh đề theo dạng bài: mỗi dạng (template) sinh số liệu mới ở mỗi lần gọi, kèm đáp án và lời giải.
 
-42 dạng = 17 dạng Đại số lớp 8–10 (đề ôn tập) + 25 dạng lớp 10–12 (đề thi tốt nghiệp THPT).
+62 dạng = 20 dạng tiểu học lớp 1–5 + 17 dạng Đại số lớp 8–10 (đề ôn tập) + 25 dạng lớp 10–12 (đề thi tốt nghiệp THPT).
 """
 
 from app.modules.exams.generator.algebra import ALGEBRA
 from app.modules.exams.generator.base import ExamMode, Generated, Rng, Template
+from app.modules.exams.generator.primary import PRIMARY
 from app.modules.exams.generator.thpt import THPT
 
-TEMPLATES: list[Template] = [*ALGEBRA, *THPT]
+TEMPLATES: list[Template] = [*PRIMARY, *ALGEBRA, *THPT]
+PRIMARY_MAX_GRADE = 5
+
+
+def for_grade(t: Template, grade: int | None) -> bool:
+    """Dạng bài hợp với học sinh: cùng cấp học (tiểu học / từ lớp 6). Tiểu học còn giới hạn tới lớp trên kế tiếp,
+    để học sinh lớp 2 không gặp phân số lớp 4. Chưa có lớp: coi như từ lớp 6."""
+    if grade is None or grade > PRIMARY_MAX_GRADE:
+        return t.grade > PRIMARY_MAX_GRADE
+    return t.grade <= grade + 1
 BY_CODE: dict[str, Template] = {t.code: t for t in TEMPLATES}
 
 TYPE_ORDER = ["choice", "true_false", "number"]
@@ -53,7 +63,7 @@ def draw(ts: list[Template], n: int, g: Rng) -> list[Template]:
 
 
 def build_questions(mode: ExamMode, size: int, g: Rng, skills: list[str] | None = None,
-                    templates: list[str] | None = None) -> list[Built] | None:
+                    templates: list[str] | None = None, grade: int | None = None) -> list[Built] | None:
     """Đề ôn tập. Trắc nghiệm: ~20% câu Đúng/Sai, còn lại A/B/C/D. Tự luận: điền đáp số.
 
     Khi truyền `templates` (đề từ dạng đã sai) thì lấy đúng các dạng đó, bất kể hình thức.
@@ -65,7 +75,8 @@ def build_questions(mode: ExamMode, size: int, g: Rng, skills: list[str] | None 
         chosen = sorted(draw(pool, size, g), key=lambda t: TYPE_ORDER.index(t.type))
         return generate(chosen, g)
 
-    pool = [t for t in TEMPLATES if t.mode == mode and (not skills or t.skill in skills)]
+    # Không chọn chủ đề: chỉ lấy dạng bài đúng cấp học của học sinh
+    pool = [t for t in TEMPLATES if t.mode == mode and (t.skill in skills if skills else for_grade(t, grade))]
     if not pool:
         return None
     tf_pool = [t for t in pool if t.type == "true_false"]

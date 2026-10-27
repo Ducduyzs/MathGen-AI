@@ -35,7 +35,7 @@ import {
   type MockProblem,
   type MockUser,
 } from "./data";
-import { buildQuestions, buildThptQuestions, TEMPLATES } from "./exam-generator";
+import { buildQuestions, buildThptQuestions, isPrimary, TEMPLATES } from "./exam-generator";
 import type { Generated } from "./gen-utils";
 import { arenaBest, handleArena } from "./arena-handlers";
 import { handleClassroom, myAssignments } from "./classroom-handlers";
@@ -132,8 +132,10 @@ const findProblem = (problemId: string | null | undefined) =>
   problemId ? (PROBLEMS.find((p) => p.id === problemId) ?? state().generated.get(problemId)) : undefined;
 
 /** Sinh một bài luyện tập từ dạng bài (chỉ dạng A/B/C/D hoặc điền số). */
-function generateProblem(skillCode: string): MockProblem | null {
-  const templates = TEMPLATES.filter((t) => t.skill === skillCode && t.type !== "true_false");
+function generateProblem(skillCode: string, grade?: number | null): MockProblem | null {
+  const all = TEMPLATES.filter((t) => t.skill === skillCode && t.type !== "true_false");
+  // Ưu tiên dạng không vượt quá lớp trên kế tiếp của học sinh
+  const templates = (grade ? all.filter((t) => t.grade <= grade + 1) : []).length ? all.filter((t) => t.grade <= grade! + 1) : all;
   if (!templates.length) return null;
   const t = templates[Math.floor(Math.random() * templates.length)];
   const g: Generated = t.make();
@@ -206,9 +208,12 @@ function pickNext(userId: string, skillCode: string | null) {
   const scores = scoresOf(userId);
   const recent = state().recent.get(userId) ?? [];
   let code = skillCode;
+  const grade = state().users.find((u) => u.id === userId)?.grade;
   if (!code) {
-    // Tự chọn chỉ trong các kỹ năng có bài ở ngân hàng mẫu (Đại số lớp 6–10).
-    const weights = SKILLS.filter((sk) => PROBLEMS.some((p) => p.skill.code === sk.code)).map((sk) => ({
+    // Tự chọn trong cấp học của học sinh: tiểu học sinh bài từ dạng bài, lớp 6–10 lấy từ ngân hàng mẫu.
+    const weights = SKILLS.filter((sk) =>
+      isPrimary(grade) ? (sk.grade_max ?? 12) <= 5 && (sk.grade_min ?? 1) <= grade! + 1 : PROBLEMS.some((p) => p.skill.code === sk.code),
+    ).map((sk) => ({
       code: sk.code,
       w: 1.05 - (scores.get(sk.code)?.score ?? 0.5),
     }));
@@ -216,7 +221,7 @@ function pickNext(userId: string, skillCode: string | null) {
     code = weights.find((x) => (roll -= x.w) <= 0)?.code ?? weights[0].code;
   }
   const pool = PROBLEMS.filter((p) => p.skill.code === code);
-  if (!pool.length) return generateProblem(code);
+  if (!pool.length) return generateProblem(code, grade);
   const fresh = pool.filter((p) => !recent.includes(p.id));
   const candidates = fresh.length ? fresh : pool.filter((p) => p.id !== recent[0]);
   const ability = scores.get(code)?.score ?? 0.5;
@@ -267,11 +272,11 @@ function generateFrom(codes: string[]): ExamSource[] | null {
 }
 
 /** Sinh câu hỏi cho đề ôn tập / đề thi THPT (dùng chung cho bài giao của lớp). */
-function buildSource(b: CreateExamRequest): { mode: ExamMode; source: ExamSource[] } | Response {
+function buildSource(b: CreateExamRequest, grade?: number | null): { mode: ExamMode; source: ExamSource[] } | Response {
   if (b.kind === "official") return { mode: "choice", source: buildThptQuestions().map(toExamQuestion) };
   if (b.mode !== "choice" && b.mode !== "written") return fail(422, "validation_error");
   if (!b.size || !EXAM_SIZES[b.mode].includes(b.size)) return fail(422, "validation_error");
-  const built = buildQuestions(b.mode, b.size, { skills: b.skills, templates: b.templates });
+  const built = buildQuestions(b.mode, b.size, { skills: b.skills, templates: b.templates, grade });
   if (!built) return fail(422, "no_template");
   return { mode: b.mode, source: built.map(toExamQuestion) };
 }
@@ -305,7 +310,7 @@ function createExam(userId: string, b: CreateExamRequest): MockExam | Response {
     if (!source.length) return fail(422, "validation_error");
     return addExam(userId, { title: `Làm lại ${source.length} câu sai`, kind: "practice", mode: orig.mode, duration_minutes: null, ends_at: null }, source);
   }
-  const built = buildSource(b);
+  const built = buildSource(b, state().users.find((u) => u.id === userId)?.grade);
   if (built instanceof Response) return built;
   if (b.kind === "official") {
     const duration = THPT_BLUEPRINT.duration_minutes;
@@ -400,7 +405,7 @@ function progressOf(userId: string): Progress {
   const daily = dailyOf(userId);
   return {
     // Học sinh mẫu chỉ có điểm ban đầu cho vài kỹ năng: kỹ năng còn lại coi như chưa luyện
-    skills: SKILLS.map((sk) => {
+    skills: SKILLS.filter((sk) => ((sk.grade_max ?? 12) <= 5) === isPrimary(state().users.find((u) => u.id === userId)?.grade)).map((sk) => {
       const sc = scores.get(sk.code) ?? { score: 0.5, n: 0 };
       return { ...sk, score: sc.score, n_attempts: sc.n };
     }),
@@ -605,7 +610,8 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
   const arena = handleArena(req, path, body, {
     user,
     users: s.users,
-    templates: (pool) => TEMPLATES.filter((t) => t.type !== "true_false" && (pool === "thpt") === !!t.part),
+    templates: (pool) =>
+      TEMPLATES.filter((t) => t.type !== "true_false" && (pool === "thpt" ? !!t.part : pool === "primary" ? t.grade <= 5 : !t.part && t.grade > 5)),
     generate: generateFrom,
     grade: (q, a) => gradeExamAnswer(q as MockExamQuestion, a),
     addActivity: (userId, results) => {

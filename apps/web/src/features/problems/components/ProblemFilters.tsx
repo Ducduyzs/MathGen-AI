@@ -1,11 +1,11 @@
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
+import { GRADES } from "@/lib/grades";
 import { DIFFICULTY_LEVELS } from "@/lib/utils";
 import type { Skill } from "@/types/api";
 import type { ProblemQuery } from "../api";
 
-const GRADES = [6, 7, 8, 9, 10, 11, 12];
 
 // Form GET thuần: lọc hoạt động cả khi chưa tải JS, URL chia sẻ được.
 export function ProblemFilters({ skills, value }: { skills: Skill[]; value: ProblemQuery }) {

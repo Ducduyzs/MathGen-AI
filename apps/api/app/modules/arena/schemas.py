@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 from app.modules.exams.schemas import ExamAnswer, ExamQuestionOut, TemplateRef
 
-ArenaPool = Literal["basic", "thpt"]
+ArenaPool = Literal["primary", "basic", "thpt"]
 ARENA_DURATIONS = (5, 15, 30)
 
 

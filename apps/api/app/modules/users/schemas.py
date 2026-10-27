@@ -24,7 +24,7 @@ class RegisterIn(BaseModel):
     password: str = Field(min_length=6, max_length=128)
     # Đăng ký công khai chỉ tạo tài khoản học sinh hoặc phụ huynh; giáo viên do quản trị viên cấp
     role: Literal["student", "parent"] = "student"
-    grade: int | None = Field(default=None, ge=6, le=12)
+    grade: int | None = Field(default=None, ge=1, le=12)
 
     @model_validator(mode="after")
     def _grade_for_student(self):

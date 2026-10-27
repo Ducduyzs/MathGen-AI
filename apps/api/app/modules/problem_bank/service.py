@@ -24,9 +24,26 @@ async def skills(db: AsyncSession) -> list[SkillOut]:
     global _skills_cache
     if _skills_cache and time.monotonic() - _skills_cache[0] < SKILLS_TTL:
         return _skills_cache[1]
-    rows = [SkillOut(code=s.code, name=s.name) for s in await db.scalars(select(Skill).order_by(Skill.sort))]
+    rows = [SkillOut(code=s.code, name=s.name, grade_min=s.grade_min, grade_max=s.grade_max)
+            for s in await db.scalars(select(Skill).order_by(Skill.sort))]
     _skills_cache = (time.monotonic(), rows)
     return rows
+
+
+PRIMARY_MAX_GRADE = 5
+
+
+def for_grade(skill: SkillOut, grade: int | None) -> bool:
+    """Kỹ năng cùng cấp học với học sinh: tiểu học (lớp 1–5) hoặc từ lớp 6. Chưa có lớp: coi như từ lớp 6."""
+    primary = grade is not None and grade <= PRIMARY_MAX_GRADE
+    return ((skill.grade_max or 12) <= PRIMARY_MAX_GRADE) == primary
+
+
+def suits(skill: SkillOut, grade: int | None) -> bool:
+    """Kỹ năng hợp để tự chọn khi luyện tập: cùng cấp học, và với tiểu học thì đã học tới (bắt đầu không quá lớp trên kế tiếp)."""
+    if not for_grade(skill, grade):
+        return False
+    return grade is None or grade > PRIMARY_MAX_GRADE or (skill.grade_min or 1) <= grade + 1
 
 
 async def skill_names(db: AsyncSession) -> dict[str, str]:

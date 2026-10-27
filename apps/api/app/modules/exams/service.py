@@ -12,7 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import ApiError
 from app.core.ids import new_id
-from app.modules.exams.generator import ALGEBRA, BY_CODE, TEMPLATES, THPT, THPT_BLUEPRINT, Rng, build_questions, build_thpt, generate
+from app.modules.exams.generator import (
+    ALGEBRA, BY_CODE, PRIMARY, TEMPLATES, THPT, THPT_BLUEPRINT, Rng, build_questions, build_thpt, generate,
+)
 from app.modules.exams.models import Exam, ExamQuestion
 from app.modules.exams.schemas import (
     CreateExamIn, ExamOut, ExamQuestionOut, ExamResult, ExamSummary, SubmitExamIn, TemplateInfo, TemplateRef,
@@ -31,7 +33,8 @@ OFFICIAL_TITLE = "Đề thi tốt nghiệp THPT · Môn Toán"
 
 
 # Kho dạng bài của Đấu trường: chỉ câu một đáp án (A/B/C/D hoặc điền số), trả lời nhanh được
-ARENA_POOLS = {"basic": ALGEBRA, "thpt": THPT}
+ARENA_POOLS = {"primary": PRIMARY, "basic": ALGEBRA, "thpt": THPT}
+
 
 
 def templates() -> list[TemplateInfo]:
@@ -57,7 +60,7 @@ COPY_FIELDS = ("type", "template_code", "template_name", "skill_code", "grade", 
 
 
 def generate_rows(kind: str, mode: str | None, size: int | None, skills: list[str] | None = None,
-                  templates: list[str] | None = None) -> tuple[str, list[dict]]:
+                  templates: list[str] | None = None, grade: int | None = None) -> tuple[str, list[dict]]:
     """Sinh câu hỏi mới cho đề ôn tập hoặc đề thi THPT (dùng chung cho đề tự tạo và bài giao của lớp).
     Trả về (hình thức, các dòng câu hỏi)."""
     g = Rng()
@@ -65,7 +68,7 @@ def generate_rows(kind: str, mode: str | None, size: int | None, skills: list[st
         return "choice", [_from_generated(t.code, q) for t, q in build_thpt(g)]
     if mode is None or size not in EXAM_SIZES[mode]:
         raise ApiError(422, "validation_error")
-    built = build_questions(mode, size, g, skills=skills, templates=templates)
+    built = build_questions(mode, size, g, skills=skills, templates=templates, grade=grade)
     if not built:
         raise ApiError(422, "no_template")
     return mode, [_from_generated(t.code, q) for t, q in built]
@@ -126,7 +129,7 @@ async def create(db: AsyncSession, user: User, body: CreateExamIn) -> ExamOut:
             raise ApiError(422, "validation_error")
         mode, title = orig.mode, f"Làm lại {len(rows)} câu sai"
     else:
-        mode, rows = generate_rows(kind, body.mode, body.size, body.skills, body.templates)
+        mode, rows = generate_rows(kind, body.mode, body.size, body.skills, body.templates, grade=user.grade)
         label = "Ôn dạng đã sai" if body.templates else "Đề ôn tập trắc nghiệm" if mode == "choice" else "Đề ôn tập tự luận"
         title = f"{label} · {body.size} câu"
 

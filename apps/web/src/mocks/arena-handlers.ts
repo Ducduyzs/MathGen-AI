@@ -171,7 +171,7 @@ export function handleArena(req: Request, path: string[], body: Record<string, u
   if (p1 === "leaderboard" && m === "GET") {
     const pool = (url.searchParams.get("pool") ?? "basic") as ArenaPool;
     const duration = Number(url.searchParams.get("duration") ?? 5);
-    if (!DURATIONS.includes(duration) || !["basic", "thpt"].includes(pool)) return fail(422, "validation_error");
+    if (!DURATIONS.includes(duration) || !["primary", "basic", "thpt"].includes(pool)) return fail(422, "validation_error");
     const best = bestPerUser(pool, duration, url.searchParams.get("scope") === "all" ? null : weekStart());
     const row = (r: MockRun): ArenaBoardRow => {
       const u = ctx.users.find((x) => x.id === r.user_id);
@@ -194,7 +194,7 @@ export function handleArena(req: Request, path: string[], body: Record<string, u
   if (p1 === "runs" && !p2 && m === "POST") {
     const pool = (body?.pool ?? "basic") as ArenaPool;
     const duration = Number(body?.duration_minutes ?? 5) as ArenaRun["duration_minutes"];
-    if (!DURATIONS.includes(duration) || !["basic", "thpt"].includes(pool)) return fail(422, "validation_error");
+    if (!DURATIONS.includes(duration) || !["primary", "basic", "thpt"].includes(pool)) return fail(422, "validation_error");
     for (const r of runs().values()) if (r.user_id === user.id && !r.finished_at) finalize(ctx, r);
     const now = Date.now();
     const r: MockRun = {

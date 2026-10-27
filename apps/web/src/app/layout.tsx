@@ -13,8 +13,8 @@ const font = Be_Vietnam_Pro({
 });
 
 export const metadata: Metadata = {
-  title: { default: "MathGen AI – Luyện Toán lớp 6–12", template: "%s | MathGen AI" },
-  description: "Ngân hàng bài Toán lớp 6–12 được AI sinh và kiểm chứng, luyện tập cá nhân hóa theo năng lực.",
+  title: { default: "MathGen AI – Luyện Toán lớp 1–12", template: "%s | MathGen AI" },
+  description: "Ngân hàng bài Toán lớp 1–12 được AI sinh và kiểm chứng, luyện tập cá nhân hóa theo năng lực.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

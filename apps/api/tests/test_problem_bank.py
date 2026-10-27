@@ -2,10 +2,12 @@ from app.seed.__main__ import DATA
 
 
 async def test_ky_nang_va_loc_bai(client):
-    assert len((await client.get("/api/skills")).json()) == 11
-    all_ = (await client.get("/api/problems")).json()
-    # 18 bài mẫu (test khác có thể đã thêm bài duyệt từ biến thể)
-    assert {f"p{i:02d}" for i in range(1, 19)} <= {p["id"] for p in all_["items"]}
+    assert len((await client.get("/api/skills")).json()) == 19  # 8 kỹ năng tiểu học + 11 kỹ năng lớp 6–12
+    # 18 bài mẫu lớp 6–12 (danh sách xếp theo lớp nên lấy từng lớp; test khác có thể đã thêm bài duyệt từ biến thể)
+    ids = {p["id"] for g in range(6, 13) for p in (await client.get("/api/problems", params={"grade": g})).json()["items"]}
+    assert {f"p{i:02d}" for i in range(1, 19)} <= ids
+    primary = (await client.get("/api/problems", params={"grade": 1})).json()["items"]
+    assert primary and all(p["grade"] == 1 and p["skill"]["code"].startswith("p_") for p in primary)
     grade9 = (await client.get("/api/problems", params={"grade": 9})).json()["items"]
     assert grade9 and all(p["grade"] == 9 for p in grade9)
     hard = (await client.get("/api/problems", params={"level": 4})).json()["items"]  # Vận dụng cao: độ khó ≥ 0,75

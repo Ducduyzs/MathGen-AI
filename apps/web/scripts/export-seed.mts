@@ -6,7 +6,7 @@ import { DAILY_GOAL, PROBLEMS, REVIEW_QUEUE, SEED_DAILY, SEED_SCORES, SKILLS, US
 
 const out = resolve("../api/app/seed/data.json");
 const data = {
-  skills: SKILLS.map((s, i) => ({ code: s.code, name: s.name, sort: i })),
+  skills: SKILLS.map((s, i) => ({ code: s.code, name: s.name, sort: i, grade_min: s.grade_min ?? 6, grade_max: s.grade_max ?? 12 })),
   problems: PROBLEMS.map((p) => ({
     id: p.id, statement: p.statement, grade: p.grade, skill_code: p.skill.code, difficulty: p.difficulty,
     answer_type: p.answer_type, answer_prefix: p.answer_prefix ?? null, choices: p.choices ?? null, hints: p.hints ?? null,

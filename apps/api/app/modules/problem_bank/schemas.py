@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field, model_validator
 class SkillOut(BaseModel):
     code: str
     name: str
+    grade_min: int | None = None
+    grade_max: int | None = None
 
 
 class ChoiceOut(BaseModel):

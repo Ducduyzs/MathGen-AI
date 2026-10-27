@@ -4,18 +4,28 @@ import type { AnswerValue, PublicProblem, ReviewItem, Role, Skill } from "@/type
 const r = String.raw;
 
 export const SKILLS: Skill[] = [
-  { code: "linear_equation", name: "Phương trình bậc nhất" },
-  { code: "factorization", name: "Phân tích nhân tử" },
-  { code: "quadratic_equation", name: "Phương trình bậc hai" },
-  { code: "inequality", name: "Bất phương trình" },
-  { code: "function", name: "Hàm số" },
+  // Tiểu học (lớp 1–5)
+  { code: "p_number", name: "Số và so sánh số", grade_min: 1, grade_max: 3 },
+  { code: "p_add_sub", name: "Cộng, trừ", grade_min: 1, grade_max: 4 },
+  { code: "p_mul_div", name: "Nhân, chia", grade_min: 2, grade_max: 5 },
+  { code: "p_word", name: "Toán có lời văn", grade_min: 1, grade_max: 5 },
+  { code: "p_measure", name: "Đo lường", grade_min: 2, grade_max: 5 },
+  { code: "p_geometry", name: "Hình học tiểu học", grade_min: 3, grade_max: 5 },
+  { code: "p_fraction", name: "Phân số", grade_min: 4, grade_max: 5 },
+  { code: "p_decimal", name: "Số thập phân – Tỉ số phần trăm", grade_min: 5, grade_max: 5 },
+  // Đại số lớp 6–10
+  { code: "linear_equation", name: "Phương trình bậc nhất", grade_min: 6, grade_max: 10 },
+  { code: "factorization", name: "Phân tích nhân tử", grade_min: 8, grade_max: 9 },
+  { code: "quadratic_equation", name: "Phương trình bậc hai", grade_min: 9, grade_max: 10 },
+  { code: "inequality", name: "Bất phương trình", grade_min: 8, grade_max: 10 },
+  { code: "function", name: "Hàm số", grade_min: 9, grade_max: 12 },
   // Lớp 10–12 (đề thi tốt nghiệp THPT)
-  { code: "calculus", name: "Đạo hàm – Tích phân" },
-  { code: "exp_log", name: "Mũ – Logarit" },
-  { code: "sequences", name: "Dãy số – Cấp số" },
-  { code: "geometry_space", name: "Hình học không gian" },
-  { code: "coordinates_3d", name: "Tọa độ Oxyz" },
-  { code: "probability_statistics", name: "Xác suất – Thống kê" },
+  { code: "calculus", name: "Đạo hàm – Tích phân", grade_min: 11, grade_max: 12 },
+  { code: "exp_log", name: "Mũ – Logarit", grade_min: 11, grade_max: 12 },
+  { code: "sequences", name: "Dãy số – Cấp số", grade_min: 11, grade_max: 12 },
+  { code: "geometry_space", name: "Hình học không gian", grade_min: 11, grade_max: 12 },
+  { code: "coordinates_3d", name: "Tọa độ Oxyz", grade_min: 12, grade_max: 12 },
+  { code: "probability_statistics", name: "Xác suất – Thống kê", grade_min: 10, grade_max: 12 },
 ];
 
 const skill = (code: string) => SKILLS.find((s) => s.code === code)!;

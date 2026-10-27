@@ -25,7 +25,7 @@ from app.modules.users.models import User
 
 SEATS = 4
 CHAMBERS = 6
-ANSWER_SECONDS = {"basic": 30, "thpt": 45}
+ANSWER_SECONDS = {"primary": 30, "basic": 30, "thpt": 45}
 REVEAL_SECONDS = 9  # đủ để xem đáp án và vòng quay của những người trả lời sai
 CALM_REVEAL_SECONDS = 5  # không ai phải quay
 ROOM_TTL = 3 * 3600

@@ -52,7 +52,7 @@ app/
 │   ├── users/          đăng ký, đăng nhập, refresh token (băm SHA-256, thu hồi được), /me
 │   ├── problem_bank/   kỹ năng, ngân hàng bài (lọc, tìm kiếm trigram), hàng chờ duyệt → duyệt thì vào ngân hàng
 │   ├── learning/       bài tiếp theo, chấm bài (Fraction, idempotency), tiến độ, mục tiêu ngày, chuỗi ngày, XP · nhiệm vụ · huy hiệu
-│   ├── exams/          làm đề: 42 dạng bài (generator/), đề ôn tập, đề thi THPT, chấm Đúng/Sai từng phần, làm lại câu sai
+│   ├── exams/          làm đề: 62 dạng bài (generator/: 20 dạng tiểu học lớp 1–5), đề ôn tập, đề thi THPT, chấm Đúng/Sai từng phần, làm lại câu sai
 │   ├── classroom/      lớp học (mã vào lớp), giao bài có hạn nộp / đảo câu, báo cáo lớp, bảng xếp hạng
 │   ├── problem_sets/   bộ đề giáo viên soạn: chọn câu theo dạng bài, đổi số liệu, sắp xếp, nhân bản, giao cho lớp
 │   ├── arena/          Đấu trường: làm đề tính giờ 5/15/30 phút, rank Đồng → Cao thủ, bảng điểm cao tuần
@@ -90,6 +90,9 @@ tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, 
 - **Phần thưởng** (`learning/rewards.py`): mọi hoạt động (luyện tập, đề, Đấu trường) đi qua `learning.record_activity` trong cùng
   giao dịch, cộng XP, chấm nhiệm vụ ngày (3 nhiệm vụ cố định theo học sinh + ngày) và huy hiệu. Ngày nghỉ được đóng băng
   khi ghi hoạt động kế tiếp; các API chỉ đọc tự tính như đã đóng băng nên không phải ghi gì.
+- **Lớp 1–12:** kỹ năng có khoảng lớp (`skills.grade_min/grade_max`). Không chọn chủ đề thì đề ôn tập, luyện tập tự chọn chỉ lấy
+  nội dung cùng cấp học với học sinh; tiểu học còn giới hạn tới lớp trên kế tiếp (lớp 2 không gặp phân số lớp 4).
+  Ngân hàng có sẵn 10 bài/dạng tiểu học do seed sinh với hạt giống cố định (`g_<mã dạng>_<số>`).
 - **Rank Đấu trường** (`arena/ranks.py`): một bảng rank chung; lượt từ 3 câu được cộng/trừ theo điểm/phút so với mức
   chuẩn của bậc hiện tại (lượt dài tính nặng hơn), ghi `arena_runs.rank_delta` một lần khi lượt kết thúc.
 - **Bàn tròn vũ trụ:** trạng thái phòng là JSON trong Redis (TTL 3 giờ), mọi thay đổi chạy dưới khóa Redis của phòng.
@@ -110,6 +113,7 @@ tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, 
 | M3.7 | Phần thưởng kiểu Duolingo (`/api/me/rewards`): XP, nhiệm vụ hằng ngày, đóng băng chuỗi, 12 huy hiệu | ✅ |
 | M3.9 | Rank Đấu trường (`/api/arena/ranking`); Bàn tròn vũ trụ chuyển sang khu Trò chơi (`/games`) | ✅ |
 | M3.8 | Bàn tròn vũ trụ (`/api/round-table`): chế độ 4 người, cảnh 3D (three.js) ở frontend | ✅ |
+| M3.10 | Mở rộng lớp 1–5: 8 kỹ năng, 20 dạng bài, kho Đấu trường / Bàn tròn "Tiểu học" | ✅ |
 | M4 | OCR ảnh/PDF scan (Mathpix/Pix2Text), lưu file trên R2, mô hình phân loại thay luật nhận dạng | chưa |
 
 **Hạn chế hiện tại:** ảnh và PDF scan báo lỗi "cần OCR". Biến thể dạng "giữ như đề gốc" có đáp án là tập nghiệm của bất phương trình hoặc biểu thức

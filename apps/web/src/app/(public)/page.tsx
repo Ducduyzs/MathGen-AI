@@ -42,7 +42,7 @@ export default function HomePage() {
         <div className="pointer-events-none absolute -top-32 -right-32 size-96 rounded-full bg-brand-100/70 blur-3xl" aria-hidden />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:py-24 lg:grid-cols-[1.1fr_1fr]">
           <div>
-            <Badge className="px-3 py-1">Toán lớp 6–12 · Đại số</Badge>
+            <Badge className="px-3 py-1">Toán lớp 1–12</Badge>
             <h1 className="mt-5 text-4xl leading-tight font-bold tracking-tight text-ink sm:text-5xl">
               Luyện Toán thông minh với ngân hàng bài <span className="text-brand-600">được AI sinh và kiểm chứng</span>
             </h1>

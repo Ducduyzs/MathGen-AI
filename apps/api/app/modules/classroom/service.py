@@ -219,7 +219,7 @@ async def create_assignment(db: AsyncSession, user: User, class_id: str, body: C
     if body.problem_set_id:
         default_title, mode, rows = await problem_sets.assignment_rows(db, user, body.problem_set_id)
     else:
-        mode, rows = exams.generate_rows(kind, body.mode, body.size, body.skills)
+        mode, rows = exams.generate_rows(kind, body.mode, body.size, body.skills, grade=c.grade)
         default_title = _default_title(body, len(rows))
     duration = THPT_BLUEPRINT["duration_minutes"] if kind == "official" else body.duration_minutes
     a = Assignment(class_id=c.id, title=(body.title or "").strip() or default_title, kind=kind, mode=mode,

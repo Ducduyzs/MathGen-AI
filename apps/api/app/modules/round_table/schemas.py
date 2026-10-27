@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 from app.modules.exams.schemas import ExamAnswer, ExamQuestionOut
 
-TablePool = Literal["basic", "thpt"]
+TablePool = Literal["primary", "basic", "thpt"]
 Phase = Literal["lobby", "question", "reveal", "finished"]
 
 

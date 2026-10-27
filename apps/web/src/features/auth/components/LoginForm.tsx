@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { FieldError, Input, Label } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { errorMessage } from "@/lib/api/errors";
 import { useAuth } from "../AuthProvider";
 import { homeFor, safeNext } from "../roles";
@@ -59,9 +60,8 @@ export function LoginForm() {
       </div>
       <div>
         <Label htmlFor="password">Mật khẩu</Label>
-        <Input
+        <PasswordInput
           id="password"
-          type="password"
           autoComplete="current-password"
           aria-invalid={!!errors.password}
           {...register("password")}

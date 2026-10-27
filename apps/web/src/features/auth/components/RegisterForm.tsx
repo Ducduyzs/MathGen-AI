@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { FieldError, Input, Label, Select } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { errorMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 import { useAuth } from "../AuthProvider";
@@ -90,9 +91,8 @@ export function RegisterForm() {
       <div className={cn("grid gap-4", student && "sm:grid-cols-[1fr_8rem]")}>
         <div>
           <Label htmlFor="password">Mật khẩu</Label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="new-password"
             aria-invalid={!!errors.password}
             {...register("password")}

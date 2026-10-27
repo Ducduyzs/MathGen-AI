@@ -48,6 +48,11 @@
   ::selection {
     background: var(--color-brand-200);
   }
+  /* Ẩn nút mắt của Edge, dùng PasswordInput thay thế. */
+  input::-ms-reveal,
+  input::-ms-clear {
+    display: none;
+  }
 }
 
 .katex {

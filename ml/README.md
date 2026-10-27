@@ -86,6 +86,7 @@ Giấy phép lấy từ metadata Hugging Face ngày 27/10/2026. **Kiểm tra l�
 | `source` | Nhãn gốc của bộ dữ liệu | ✔ | ✔ |
 | `heur` | Ước lượng theo quy tắc (ví dụ độ khó GSM8K theo số bước tính) | ✔ | ✘ |
 | `weak` | Đoán bằng từ khóa | ✔ | **✘** |
+| `llm` | 3 LLM gắn nhãn độc lập, lấy theo đa số (`labels/vi_reality_llm.jsonl`) | ✔ | chỉ câu `unanimous` hoặc đã được giáo viên duyệt |
 
 Khi đánh giá phải **che theo từng trường**: chỉ chấm trường nào có `label_src` là `exact` hoặc `source`.
 
@@ -124,7 +125,29 @@ Khi đánh giá phải **che theo từng trường**: chỉ chấm trường nà
 
 Trường `suggested` là nhãn đoán để tham khảo, **không chép nguyên**. Nên để 2 người gắn nhãn độc lập khoảng 100 câu đầu, rồi đo mức đồng thuận.
 
-## Hạn chế cần biết
+## Gắn nhãn bằng LLM (`scripts/llm_label.py`)
+
+Thay cho việc chờ giáo viên gắn nhãn cả 499 câu: **3 mô hình gắn nhãn độc lập** với cùng một hướng dẫn (GPT, DeepSeek, Gemini),
+như 3 người gắn nhãn không thấy nhãn của nhau. Sau đó gộp: chủ đề và dạng lấy theo đa số (≥ 2/3), lớp và mức độ lấy trung vị.
+
+```bash
+# Khóa API trong ml/.env: OPENAI_API_KEY, DEEPSEEK_API_KEY, GEMINI_API_KEY (file này không được commit)
+python scripts/llm_label.py              # gọi API cho câu còn thiếu, rồi gộp
+python scripts/llm_label.py --aggregate  # chỉ gộp lại từ labels/raw/
+```
+
+- `labels/raw/<mô hình>.jsonl`: phiếu thô của từng mô hình. Chạy lại chỉ gọi API cho câu chưa có, không tốn thêm tiền.
+- `labels/vi_reality_llm.jsonl`: nhãn gộp + phiếu của từng mô hình + `unanimous` + `needs_review`.
+- `labels/REPORT.md`: mức đồng thuận (tỉ lệ trùng, Fleiss' κ, từng cặp mô hình) và phân bố nhãn.
+
+**Dùng nhãn này thế nào cho đúng:**
+- **Train:** dùng được mọi câu có nhãn gộp (`label_src = "llm"`).
+- **Chấm điểm (bộ test thật):** chỉ dùng câu `unanimous` (cả 3 trùng chủ đề, lệch ≤ 1 lớp và ≤ 1 mức độ), hoặc câu đã được
+  giáo viên duyệt. Không train và chấm trên cùng một câu.
+- **Việc của giáo viên** giờ nhỏ hơn nhiều: chỉ duyệt các câu `needs_review` và kiểm tra ngẫu nhiên khoảng 50 câu `unanimous`
+  để ước lượng tỉ lệ sai của chính nhãn LLM.
+
+
 
 - **Nhãn lớp cụ thể** hiện chỉ có ở dữ liệu tổng hợp (khoảng 11 nghìn câu). Đề thật có nhãn lớp phải chờ bước gắn nhãn ở trên.
 - **Phần lớn đề quốc tế là tiếng Anh.** Nếu fine-tune PhoBERT (chỉ hiểu tiếng Việt) thì chỉ dùng được phần tiếng Việt. Muốn tận dụng toàn bộ thì nên chọn **bộ mã hóa đa ngữ** (XLM-R, mDeBERTa), hoặc dịch dữ liệu (cần kiểm tra giấy phép bản dịch).

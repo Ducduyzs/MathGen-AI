@@ -53,13 +53,14 @@ app/
 │   ├── problem_bank/   kỹ năng, ngân hàng bài (lọc, tìm kiếm trigram), hàng chờ duyệt → duyệt thì vào ngân hàng
 │   ├── learning/       bài tiếp theo, chấm bài (Fraction, idempotency), tiến độ, mục tiêu ngày, chuỗi ngày
 │   ├── exams/          làm đề: 42 dạng bài (generator/), đề ôn tập, đề thi THPT, chấm Đúng/Sai từng phần, làm lại câu sai
+│   ├── classroom/      lớp học (mã vào lớp), giao bài có hạn nộp / đảo câu, báo cáo lớp, bảng xếp hạng
 │   └── ingestion/      tải đề (link ký sẵn), pipeline 5 bước trong worker, sinh biến thể có kiểm chứng
 │       └── pipeline/   phân tích biểu thức → nhận dạng 9 dạng → giải chính xác → dạng chuẩn chống trùng → SymPy kiểm chứng
 ├── workers/         Celery (hàng đợi learning / ingest), phiên DB đồng bộ
 ├── seed/            dữ liệu mẫu (data.json xuất từ mock: cd apps/web && npm run seed:export)
 └── main.py
 migrations/          Alembic
-tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, tải đề, worker)
+tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, lớp học, tải đề, worker)
 ```
 
 **Quy tắc giữa các module:** module chỉ gọi `service.py` của module khác, không đọc bảng của nhau. Ví dụ `learning` lấy bài qua `problem_bank.service`.
@@ -89,6 +90,7 @@ tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, 
 | M1 | Hạ tầng, đăng nhập, ngân hàng bài, luyện tập, tiến độ, hàng chờ duyệt | ✅ |
 | M2 | Làm đề (`/api/exams`): 42 dạng bài bằng Python, đề ôn tập, đề thi THPT | ✅ |
 | M3 | Tải đề và sinh biến thể (`/api/ingestion`, `/api/generation`), duyệt bài vào ngân hàng | ✅ |
+| M3.5 | Lớp học & giao bài (`/api/classes`, `/api/assignments`, `/api/me/assignments`): mã vào lớp, hạn nộp, đảo câu, báo cáo từng câu / kỹ năng, xuất bảng điểm, bảng xếp hạng | ✅ |
 | M4 | OCR ảnh/PDF scan (Mathpix/Pix2Text), lưu file trên R2, mô hình phân loại thay luật nhận dạng | chưa |
 
 **Hạn chế hiện tại:** ảnh và PDF scan báo lỗi "cần OCR". Biến thể dạng "giữ như đề gốc" có đáp án là tập nghiệm của bất phương trình hoặc biểu thức

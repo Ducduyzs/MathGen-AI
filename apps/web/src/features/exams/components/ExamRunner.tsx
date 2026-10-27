@@ -34,7 +34,11 @@ export function ExamRunner({ id }: { id: string }) {
   useEffect(() => {
     if (!exam || restored.current) return;
     restored.current = true;
-    if (exam.result) return;
+    if (exam.result) {
+      // Đề đã nộp: hiện lại bài làm do server lưu (mở trên máy khác, hoặc đã xóa nháp)
+      if (exam.answers) setAnswers(exam.answers);
+      return;
+    }
     try {
       const raw = localStorage.getItem(draftKey(exam.id));
       if (raw) setAnswers(JSON.parse(raw) as Record<string, ExamAnswer>);
@@ -155,8 +159,8 @@ export function ExamRunner({ id }: { id: string }) {
 
       <div className="mx-auto w-full max-w-4xl min-w-0 space-y-5">
         <div>
-          <Link href="/exams" className="text-sm text-muted hover:text-brand-700">
-            ← Làm đề
+          <Link href={exam.assignment_id ? "/classes" : "/exams"} className="text-sm text-muted hover:text-brand-700">
+            {exam.assignment_id ? "← Lớp học" : "← Làm đề"}
           </Link>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-ink">{exam.title}</h1>
           <p className="mt-1 text-sm text-muted">

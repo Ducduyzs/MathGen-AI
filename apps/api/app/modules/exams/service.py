@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import ApiError
+from app.core.ids import new_id
 from app.modules.exams.generator import BY_CODE, TEMPLATES, THPT_BLUEPRINT, Rng, build_questions, build_thpt
 from app.modules.exams.models import Exam, ExamQuestion
 from app.modules.exams.schemas import (
@@ -26,6 +27,7 @@ EXAM_SIZES = {"choice": [10, 20, 40, 100], "written": [5, 10, 20, 40]}
 # Đúng/Sai: điểm theo số ý đúng (0–4 ý)
 TF_POINTS = [Fraction(0), Fraction(1, 10), Fraction(1, 4), Fraction(1, 2), Fraction(1)]
 RECENT = 10
+OFFICIAL_TITLE = "Đề thi tốt nghiệp THPT · Môn Toán"
 
 
 def templates() -> list[TemplateInfo]:
@@ -46,6 +48,21 @@ COPY_FIELDS = ("type", "template_code", "template_name", "skill_code", "grade", 
                "statements", "answer_prefix", "answer", "answer_display", "solution", "tolerance")
 
 
+def generate_rows(kind: str, mode: str | None, size: int | None, skills: list[str] | None = None,
+                  templates: list[str] | None = None) -> tuple[str, list[dict]]:
+    """Sinh câu hỏi mới cho đề ôn tập hoặc đề thi THPT (dùng chung cho đề tự tạo và bài giao của lớp).
+    Trả về (hình thức, các dòng câu hỏi)."""
+    g = Rng()
+    if kind == "official":
+        return "choice", [_from_generated(t.code, q) for t, q in build_thpt(g)]
+    if mode is None or size not in EXAM_SIZES[mode]:
+        raise ApiError(422, "validation_error")
+    built = build_questions(mode, size, g, skills=skills, templates=templates)
+    if not built:
+        raise ApiError(422, "no_template")
+    return mode, [_from_generated(t.code, q) for t, q in built]
+
+
 async def _owned(db: AsyncSession, user: User, exam_id: str, *, lock: bool = False) -> Exam:
     stmt = select(Exam).where(Exam.id == exam_id, Exam.user_id == user.id)
     exam = await db.scalar(stmt.with_for_update() if lock else stmt)
@@ -62,7 +79,9 @@ async def _out(db: AsyncSession, exam: Exam, qs: list[ExamQuestion]) -> ExamOut:
     names = await bank.skill_names(db)
     return ExamOut(
         id=exam.id, title=exam.title, kind=exam.kind, mode=exam.mode, size=exam.size, created_at=exam.created_at,
-        duration_minutes=exam.duration_minutes, ends_at=exam.ends_at, result=exam.result,
+        duration_minutes=exam.duration_minutes, ends_at=exam.ends_at, result=exam.result, assignment_id=exam.assignment_id,
+        # Bài làm chỉ trả về sau khi nộp: xem lại trên máy khác vẫn thấy mình đã chọn gì
+        answers=exam.answers if exam.result else None,
         questions=[
             ExamQuestionOut(
                 id=q.id, index=q.position, type=q.type, template=TemplateRef(code=q.template_code, name=q.template_name),
@@ -76,14 +95,12 @@ async def _out(db: AsyncSession, exam: Exam, qs: list[ExamQuestion]) -> ExamOut:
 
 
 async def create(db: AsyncSession, user: User, body: CreateExamIn) -> ExamOut:
-    g = Rng()
     kind, duration = "practice", None
     if body.kind == "official":
         if body.blueprint != "thpt":
             raise ApiError(422, "validation_error")
-        kind, mode, title = "official", "choice", "Đề thi tốt nghiệp THPT · Môn Toán"
-        duration = THPT_BLUEPRINT["duration_minutes"]
-        rows = [_from_generated(t.code, q) for t, q in build_thpt(g)]
+        kind, title, duration = "official", OFFICIAL_TITLE, THPT_BLUEPRINT["duration_minutes"]
+        mode, rows = generate_rows(kind, None, None)
     elif body.retry_of:
         orig = await _owned(db, user, body.retry_of)
         if not orig.result:
@@ -94,29 +111,33 @@ async def create(db: AsyncSession, user: User, body: CreateExamIn) -> ExamOut:
             raise ApiError(422, "validation_error")
         mode, title = orig.mode, f"Làm lại {len(rows)} câu sai"
     else:
-        if body.mode is None or body.size not in EXAM_SIZES[body.mode]:
-            raise ApiError(422, "validation_error")
-        built = build_questions(body.mode, body.size, g, skills=body.skills, templates=body.templates)
-        if not built:
-            raise ApiError(422, "no_template")
-        mode = body.mode
+        mode, rows = generate_rows(kind, body.mode, body.size, body.skills, body.templates)
         label = "Ôn dạng đã sai" if body.templates else "Đề ôn tập trắc nghiệm" if mode == "choice" else "Đề ôn tập tự luận"
         title = f"{label} · {body.size} câu"
-        rows = [_from_generated(t.code, q) for t, q in built]
 
     now = datetime.now(UTC)
-    exam = Exam(user_id=user.id, title=title, kind=kind, mode=mode, size=len(rows), created_at=now, duration_minutes=duration,
-                ends_at=now + timedelta(minutes=duration) if duration else None)
-    db.add(exam)
-    await db.flush()  # cần exam.id cho mã câu hỏi
-    qs = [ExamQuestion(id=f"{exam.id}_q{i}", exam_id=exam.id, position=i, **row) for i, row in enumerate(rows, start=1)]
-    db.add_all(qs)
+    exam, qs = add_exam(db, user, title, kind, mode, rows, duration, now + timedelta(minutes=duration) if duration else None, now)
     await db.commit()
     return await _out(db, exam, qs)
 
 
+def add_exam(db: AsyncSession, user: User, title: str, kind: str, mode: str, rows: list[dict], duration: int | None,
+             ends_at: datetime | None, now: datetime, assignment_id: str | None = None) -> tuple[Exam, list[ExamQuestion]]:
+    """Thêm đề và câu hỏi vào phiên (chưa commit). Mã ULID sinh ở ứng dụng nên không cần flush để lấy exam.id."""
+    exam = Exam(id=new_id(), user_id=user.id, title=title, kind=kind, mode=mode, size=len(rows), created_at=now,
+                duration_minutes=duration, ends_at=ends_at, assignment_id=assignment_id)
+    qs = [ExamQuestion(id=f"{exam.id}_q{i}", exam_id=exam.id, position=i, **row) for i, row in enumerate(rows, start=1)]
+    db.add(exam)
+    db.add_all(qs)
+    return exam, qs
+
+
 async def get(db: AsyncSession, user: User, exam_id: str) -> ExamOut:
-    exam = await _owned(db, user, exam_id)
+    return await detail(db, await _owned(db, user, exam_id))
+
+
+async def detail(db: AsyncSession, exam: Exam) -> ExamOut:
+    """Đề kèm câu hỏi. Người gọi đã kiểm tra quyền xem."""
     return await _out(db, exam, await _questions(db, exam.id))
 
 
@@ -127,6 +148,33 @@ async def recent(db: AsyncSession, user: User) -> list[ExamSummary]:
                     score=e.result["score"] if e.result else None, correct=e.result["correct"] if e.result else None)
         for e in rows
     ]
+
+
+
+# ---------------------------------------------------------------- đề của bài giao (module classroom gọi)
+
+async def assignment_exams(db: AsyncSession, assignment_ids: list[str], user_ids: list[str] | None = None,
+                           submitted: bool = False) -> list[Exam]:
+    """Đề học sinh làm cho các bài giao (lọc theo học sinh, chỉ đề đã nộp nếu `submitted`)."""
+    if not assignment_ids:
+        return []
+    stmt = select(Exam).where(Exam.assignment_id.in_(assignment_ids))
+    if user_ids is not None:
+        stmt = stmt.where(Exam.user_id.in_(user_ids))
+    if submitted:
+        stmt = stmt.where(Exam.result.is_not(None))
+    return list(await db.scalars(stmt))
+
+
+async def assignment_exam(db: AsyncSession, assignment_id: str, user_id: str) -> Exam | None:
+    return await db.scalar(select(Exam).where(Exam.assignment_id == assignment_id, Exam.user_id == user_id))
+
+
+async def source_indexes(db: AsyncSession, exam_ids: list[str]) -> dict[str, int | None]:
+    """Mã câu hỏi → vị trí của câu trong bài giao (đề đảo câu thì mỗi học sinh một thứ tự)."""
+    if not exam_ids:
+        return {}
+    return dict((await db.execute(select(ExamQuestion.id, ExamQuestion.source_index).where(ExamQuestion.exam_id.in_(exam_ids)))).all())
 
 
 # ---------------------------------------------------------------- chấm bài

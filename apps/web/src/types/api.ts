@@ -199,6 +199,10 @@ export interface Exam {
   ends_at: string | null;
   questions: ExamQuestion[];
   result: ExamResult | null;
+  /** Đề của bài giao trong lớp (nếu có). */
+  assignment_id?: string | null;
+  /** Bài làm của học sinh, chỉ có sau khi nộp. */
+  answers?: Record<string, ExamAnswer> | null;
 }
 
 export interface ExamSummary {
@@ -360,3 +364,126 @@ export interface SubmitVariantsRequest {
 }
 
 export type ReviewDecision = { decision: "approve" } | { decision: "reject"; reason: string };
+
+// ---- Lớp học & bài giao
+
+export interface ClassRoom {
+  id: string;
+  name: string;
+  grade: number | null;
+  teacher_name: string;
+  /** Chỉ giáo viên của lớp mới thấy. */
+  join_code?: string;
+  member_count: number;
+  assignment_count: number;
+  /** Học sinh: số bài chưa làm và còn hạn. */
+  pending_count: number;
+  created_at: string;
+}
+
+export interface ClassMember {
+  id: string;
+  full_name: string;
+  email: string;
+  grade: number | null;
+  joined_at: string;
+}
+
+export interface ClassDetail extends ClassRoom {
+  /** Chỉ giáo viên của lớp mới thấy. */
+  members?: ClassMember[];
+}
+
+export interface CreateClassRequest {
+  name: string;
+  grade?: number | null;
+}
+
+/** todo: chưa làm · in_progress: đang làm · submitted: đã nộp · late: nộp sau hạn · missed: quá hạn, chưa nộp. */
+export type AssignmentStatus = "todo" | "in_progress" | "submitted" | "late" | "missed";
+
+export interface Assignment {
+  id: string;
+  class_id: string;
+  class_name: string;
+  title: string;
+  kind: ExamKind;
+  mode: ExamMode;
+  size: number;
+  duration_minutes: number | null;
+  due_at: string | null;
+  shuffle: boolean;
+  created_at: string;
+  // Giáo viên
+  member_count?: number;
+  submitted_count?: number;
+  average_score?: number | null;
+  // Học sinh
+  status?: AssignmentStatus;
+  exam_id?: string | null;
+  score?: number | null;
+}
+
+export interface CreateAssignmentRequest {
+  title?: string;
+  kind: ExamKind;
+  mode?: ExamMode;
+  size?: number;
+  skills?: string[];
+  duration_minutes?: number | null;
+  due_at?: string | null;
+  shuffle?: boolean;
+}
+
+export interface StudentResult {
+  id: string;
+  full_name: string;
+  status: AssignmentStatus;
+  exam_id: string | null;
+  score: number | null;
+  correct: number | null;
+  total: number;
+  started_at: string | null;
+  submitted_at: string | null;
+  duration_seconds: number | null;
+}
+
+export interface QuestionStat {
+  index: number;
+  type: ExamQuestionType;
+  statement: string;
+  template: TemplateRef;
+  skill: Skill;
+  answer_display: string;
+  /** Tỉ lệ điểm trung bình của câu (0–1) trong số bài đã nộp. */
+  correct_rate: number | null;
+  answered: number;
+}
+
+export interface AssignmentReport {
+  assignment: Assignment;
+  summary: {
+    member_count: number;
+    submitted_count: number;
+    late_count: number;
+    average_score: number | null;
+    max_score: number | null;
+    min_score: number | null;
+    /** Số bài theo khoảng điểm [0,2) [2,4) [4,6) [6,8) [8,10]. */
+    distribution: number[];
+  };
+  students: StudentResult[];
+  questions: QuestionStat[];
+  skills: { skill: Skill; questions: number; correct_rate: number | null }[];
+}
+
+export interface LeaderboardRow {
+  id: string;
+  full_name: string;
+  is_me: boolean;
+  average_score: number | null;
+  assignments_done: number;
+  /** Số bài đã làm trong 7 ngày gần nhất. */
+  week_problems: number;
+  streak_days: number;
+}

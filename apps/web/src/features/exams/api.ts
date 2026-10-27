@@ -56,6 +56,8 @@ export function useSubmitExam(id: string) {
       queryClient.setQueryData(examKeys.detail(id), exam);
       void queryClient.invalidateQueries({ queryKey: examKeys.list });
       void queryClient.invalidateQueries({ queryKey: progressKeys.all });
+      // Bài giao của lớp: trạng thái và báo cáo đổi sau khi nộp (khóa của features/classroom, viết thẳng để tránh import vòng)
+      if (exam.assignment_id) void queryClient.invalidateQueries({ queryKey: ["classes"] });
     },
   });
 }

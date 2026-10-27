@@ -126,6 +126,17 @@ def streak(days: dict[date, int], goal: int, today: date) -> int:
     return n
 
 
+
+async def activity_by_user(db: AsyncSession, user_ids: list[str], days: int) -> dict[str, dict[date, int]]:
+    """Số bài mỗi ngày trong `days` ngày gần nhất của nhiều học sinh (bảng xếp hạng lớp)."""
+    out: dict[str, dict[date, int]] = {u: {} for u in user_ids}
+    if user_ids:
+        rows = await db.scalars(select(DailyActivity).where(DailyActivity.user_id.in_(user_ids), DailyActivity.day > today_vn() - timedelta(days=days)))
+        for r in rows:
+            out[r.user_id][r.day] = r.count
+    return out
+
+
 async def progress(db: AsyncSession, user: User) -> ProgressOut:
     goal = get_settings().daily_goal
     scores = await _scores(db, user.id)

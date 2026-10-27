@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -12,7 +12,11 @@ class Exam(Timestamped, Base):
     """Một đề của một học sinh (ôn tập hoặc đề thi). Nộp xong thì `result` cố định: nộp lại chỉ trả kết quả cũ."""
 
     __tablename__ = "exams"
-    __table_args__ = (Index("ix_exams_user_created", "user_id", "created_at"),)
+    __table_args__ = (
+        Index("ix_exams_user_created", "user_id", "created_at"),
+        # Mỗi học sinh làm một bài giao đúng một lần (NULL không tính trùng: đề tự tạo không bị ràng buộc)
+        UniqueConstraint("assignment_id", "user_id", name="uq_exams_assignment_user"),
+    )
 
     id: Mapped[str] = mapped_column(String(26), primary_key=True, default=new_id)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
@@ -26,6 +30,8 @@ class Exam(Timestamped, Base):
     answers: Mapped[dict | None] = mapped_column(JSONB)
     result: Mapped[dict | None] = mapped_column(JSONB)
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Đề được chép từ bài giao của lớp; xóa bài giao thì đề vẫn còn trong lịch sử của học sinh
+    assignment_id: Mapped[str | None] = mapped_column(ForeignKey("assignments.id", ondelete="SET NULL"))
 
 
 class ExamQuestion(Base):
@@ -50,3 +56,5 @@ class ExamQuestion(Base):
     answer_display: Mapped[str] = mapped_column(Text)
     solution: Mapped[list] = mapped_column(JSONB)
     tolerance: Mapped[float | None] = mapped_column(Float)
+    # Vị trí của câu trong bài giao (khi đảo câu, `position` của từng học sinh khác nhau)
+    source_index: Mapped[int | None] = mapped_column(Integer)

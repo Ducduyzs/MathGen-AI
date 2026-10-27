@@ -4,6 +4,7 @@ from sqlalchemy import text
 from app.core.db import engine
 from app.core.errors import install_handlers
 from app.core.redis import get_redis
+from app.modules.classroom.router import router as classroom
 from app.modules.exams.router import router as exams
 from app.modules.ingestion.router import router as ingestion
 from app.modules.learning.router import router as learning
@@ -16,7 +17,7 @@ def create_app() -> FastAPI:
     install_handlers(app)
 
     api = APIRouter(prefix="/api")
-    for r in (users, problem_bank, learning, exams, ingestion):
+    for r in (users, problem_bank, learning, exams, ingestion, classroom):
         api.include_router(r)
 
     @api.get("/health", tags=["ops"])

@@ -37,17 +37,21 @@ import {
 } from "./data";
 import { buildQuestions, buildThptQuestions, TEMPLATES } from "./exam-generator";
 import type { Generated } from "./gen-utils";
+import { handleClassroom } from "./classroom-handlers";
 import { handleIngestion, handleStorageUpload } from "./ingestion-handlers";
 import { THPT_BLUEPRINT } from "./thpt-templates";
 
 export const EXAM_SIZES: Record<ExamMode, number[]> = { choice: [10, 20, 40, 100], written: [5, 10, 20, 40] };
+export const OFFICIAL_TITLE = "Đề thi tốt nghiệp THPT · Môn Toán";
 
 type MockExamQuestion = ExamQuestion & { answer: ExamAnswer; answer_display: string; solution: string[]; tolerance?: number };
 
-interface MockExam extends Omit<Exam, "questions"> {
+export interface MockExam extends Omit<Exam, "questions"> {
   user_id: string;
-  questions: MockExamQuestion[];
+  questions: (MockExamQuestion & { source_index?: number })[];
 }
+
+export type ExamSource = Omit<MockExamQuestion, "id" | "index">;
 
 interface AttemptRecord {
   id: string;
@@ -231,7 +235,9 @@ const toPublicExam = (e: MockExam): Exam => ({
   duration_minutes: e.duration_minutes,
   ends_at: e.ends_at,
   result: e.result,
-  questions: e.questions.map(({ answer: _a, answer_display: _d, solution: _s, tolerance: _t, ...q }) => q),
+  assignment_id: e.assignment_id ?? null,
+  answers: e.result ? (e.answers ?? null) : null,
+  questions: e.questions.map(({ answer: _a, answer_display: _d, solution: _s, tolerance: _t, source_index: _i, ...q }) => q),
 });
 
 type BuiltQuestion = { template: (typeof TEMPLATES)[number] } & Generated;
@@ -245,56 +251,57 @@ const toExamQuestion = ({ template, ...g }: BuiltQuestion): Omit<MockExamQuestio
   ...g,
 });
 
-function createExam(userId: string, b: CreateExamRequest): MockExam | Response {
-  const s = state();
+/** Sinh câu hỏi cho đề ôn tập / đề thi THPT (dùng chung cho bài giao của lớp). */
+function buildSource(b: CreateExamRequest): { mode: ExamMode; source: ExamSource[] } | Response {
+  if (b.kind === "official") return { mode: "choice", source: buildThptQuestions().map(toExamQuestion) };
+  if (b.mode !== "choice" && b.mode !== "written") return fail(422, "validation_error");
+  if (!b.size || !EXAM_SIZES[b.mode].includes(b.size)) return fail(422, "validation_error");
+  const built = buildQuestions(b.mode, b.size, { skills: b.skills, templates: b.templates });
+  if (!built) return fail(422, "no_template");
+  return { mode: b.mode, source: built.map(toExamQuestion) };
+}
+
+function addExam(
+  userId: string,
+  e: Pick<MockExam, "title" | "kind" | "mode" | "duration_minutes" | "ends_at"> & { assignment_id?: string },
+  source: (ExamSource & { source_index?: number })[],
+): MockExam {
   const examId = id("ex");
-  let kind: MockExam["kind"] = "practice";
-  let mode: ExamMode;
-  let title: string;
-  let duration: number | null = null;
-  let source: Omit<MockExamQuestion, "id" | "index">[];
-
-  if (b.kind === "official") {
-    if (b.blueprint !== "thpt") return fail(422, "validation_error");
-    kind = "official";
-    mode = "choice";
-    title = "Đề thi tốt nghiệp THPT · Môn Toán";
-    duration = THPT_BLUEPRINT.duration_minutes;
-    source = buildThptQuestions().map(toExamQuestion);
-  } else if (b.retry_of) {
-    const orig = s.exams.get(b.retry_of);
-    if (!orig || orig.user_id !== userId || !orig.result) return fail(404, "not_found");
-    const wrong = new Set(orig.result.items.filter((i) => !i.is_correct).map((i) => i.question_id));
-    source = orig.questions.filter((q) => wrong.has(q.id));
-    if (!source.length) return fail(422, "validation_error");
-    mode = orig.mode;
-    title = `Làm lại ${source.length} câu sai`;
-  } else {
-    if (b.mode !== "choice" && b.mode !== "written") return fail(422, "validation_error");
-    if (!b.size || !EXAM_SIZES[b.mode].includes(b.size)) return fail(422, "validation_error");
-    const built = buildQuestions(b.mode, b.size, { skills: b.skills, templates: b.templates });
-    if (!built) return fail(422, "no_template");
-    mode = b.mode;
-    title = `${b.templates?.length ? "Ôn dạng đã sai" : mode === "choice" ? "Đề ôn tập trắc nghiệm" : "Đề ôn tập tự luận"} · ${b.size} câu`;
-    source = built.map(toExamQuestion);
-  }
-
-  const now = Date.now();
   const exam: MockExam = {
+    ...e,
     id: examId,
     user_id: userId,
-    title,
-    kind,
-    mode,
     size: source.length,
-    created_at: new Date(now).toISOString(),
-    duration_minutes: duration,
-    ends_at: duration ? new Date(now + duration * 60_000).toISOString() : null,
+    created_at: new Date().toISOString(),
     result: null,
     questions: source.map((q, i) => ({ ...q, id: `${examId}_q${i + 1}`, index: i + 1 })),
   };
-  s.exams.set(examId, exam);
+  state().exams.set(examId, exam);
   return exam;
+}
+
+function createExam(userId: string, b: CreateExamRequest): MockExam | Response {
+  if (b.kind === "official" && b.blueprint !== "thpt") return fail(422, "validation_error");
+  if (b.kind !== "official" && b.retry_of) {
+    const orig = state().exams.get(b.retry_of);
+    if (!orig || orig.user_id !== userId || !orig.result) return fail(404, "not_found");
+    const wrong = new Set(orig.result.items.filter((i) => !i.is_correct).map((i) => i.question_id));
+    const source = orig.questions.filter((q) => wrong.has(q.id)).map(({ id: _id, index: _ix, source_index: _si, ...q }) => q);
+    if (!source.length) return fail(422, "validation_error");
+    return addExam(userId, { title: `Làm lại ${source.length} câu sai`, kind: "practice", mode: orig.mode, duration_minutes: null, ends_at: null }, source);
+  }
+  const built = buildSource(b);
+  if (built instanceof Response) return built;
+  if (b.kind === "official") {
+    const duration = THPT_BLUEPRINT.duration_minutes;
+    return addExam(
+      userId,
+      { title: OFFICIAL_TITLE, kind: "official", mode: "choice", duration_minutes: duration, ends_at: new Date(Date.now() + duration * 60_000).toISOString() },
+      built.source,
+    );
+  }
+  const label = b.templates?.length ? "Ôn dạng đã sai" : built.mode === "choice" ? "Đề ôn tập trắc nghiệm" : "Đề ôn tập tự luận";
+  return addExam(userId, { title: `${label} · ${b.size} câu`, kind: "practice", mode: built.mode, duration_minutes: null, ends_at: null }, built.source);
 }
 
 const TF_POINTS = [0, 0.1, 0.25, 0.5, 1];
@@ -532,10 +539,28 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
     if (req.method === "GET" && path.length === 2) return json(toPublicExam(exam));
     if (req.method === "POST" && path[2] === "submit") {
       // Nộp lại đề đã chấm: trả kết quả cũ (an toàn khi mạng lỗi và client gửi lại).
-      exam.result ??= submitExam(exam, (body?.answers ?? {}) as Record<string, ExamAnswer>);
+      if (!exam.result) {
+        exam.answers = (body?.answers ?? {}) as Record<string, ExamAnswer>;
+        exam.result = submitExam(exam, exam.answers);
+      }
       return json(toPublicExam(exam));
     }
   }
+
+  // ---- Lớp học & bài giao
+  const classroom = handleClassroom(req, path, body, {
+    user,
+    users: s.users,
+    exams: s.exams,
+    buildSource,
+    addExam,
+    activity: (userId) => {
+      const d = dailyOf(userId);
+      return { week: d.count, streak: d.streakBefore + (d.count >= DAILY_GOAL ? 1 : 0) };
+    },
+    publicExam: toPublicExam,
+  });
+  if (classroom) return classroom;
 
   // ---- Tải đề & sinh câu hỏi (giáo viên / quản trị)
   const ingestion = await handleIngestion(req, path, body, {

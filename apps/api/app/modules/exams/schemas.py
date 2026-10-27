@@ -108,6 +108,10 @@ class ExamOut(BaseModel):
     ends_at: datetime | None
     questions: list[ExamQuestionOut]
     result: ExamResult | None
+    # Bài giao của lớp (nếu có): giao diện hiện đường quay về lớp
+    assignment_id: str | None = None
+    # Bài làm của học sinh, chỉ có sau khi nộp
+    answers: dict[str, dict] | None = None
 
 
 class ExamSummary(BaseModel):

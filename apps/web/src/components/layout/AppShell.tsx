@@ -30,11 +30,14 @@ interface NavItem {
   label: string;
   icon: LucideIcon;
   soon?: boolean;
+  /** Các trang con nằm ngoài href nhưng thuộc mục này (báo cáo bài giao thuộc Lớp học). */
+  also?: string[];
 }
 
 const STUDENT: NavItem[] = [
   { href: "/practice", label: "Luyện tập", icon: Target },
   { href: "/exams", label: "Làm đề", icon: FileText },
+  { href: "/classes", label: "Lớp học", icon: Users },
   { href: "/me/progress", label: "Tiến độ", icon: TrendingUp },
   { href: "/problems", label: "Ngân hàng bài", icon: Library },
 ];
@@ -43,7 +46,7 @@ const TEACHER: NavItem[] = [
   { href: "/teacher/review", label: "Duyệt bài", icon: ClipboardCheck },
   { href: "/teacher/uploads", label: "Tải tài liệu", icon: Upload },
   { href: "/teacher/problem-sets", label: "Bộ đề", icon: FileStack, soon: true },
-  { href: "/teacher/classes", label: "Lớp học", icon: Users, soon: true },
+  { href: "/teacher/classes", label: "Lớp học", icon: Users, also: ["/teacher/assignments"] },
   { href: "/problems", label: "Ngân hàng bài", icon: Library },
 ];
 
@@ -87,7 +90,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <p className="px-3 pb-2 text-xs font-semibold tracking-wide text-muted uppercase">{section.title}</p>
             <ul className="space-y-1">
               {section.items.map((item) => {
-                const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                const active = [item.href, ...(item.also ?? [])].some((h) => pathname === h || pathname.startsWith(`${h}/`));
                 const Icon = item.icon;
                 if (item.soon) {
                   return (

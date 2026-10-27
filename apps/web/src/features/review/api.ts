@@ -8,11 +8,12 @@ export const reviewKeys = {
   queue: ["review", "queue"] as const,
 };
 
-export function useReviewQueue() {
+export function useReviewQueue(enabled = true) {
   return useQuery({
     queryKey: reviewKeys.queue,
     queryFn: () => apiFetch<ReviewItem[]>("/api/review/queue"),
     staleTime: 0,
+    enabled,
   });
 }
 

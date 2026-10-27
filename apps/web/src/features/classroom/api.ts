@@ -40,8 +40,8 @@ export function useLeaderboard(id: string) {
   return useQuery({ queryKey: classKeys.leaderboard(id), queryFn: () => apiFetch<LeaderboardRow[]>(`/api/classes/${enc(id)}/leaderboard`) });
 }
 
-export function useMyAssignments() {
-  return useQuery({ queryKey: classKeys.mine, queryFn: () => apiFetch<Assignment[]>("/api/me/assignments") });
+export function useMyAssignments(enabled = true) {
+  return useQuery({ queryKey: classKeys.mine, queryFn: () => apiFetch<Assignment[]>("/api/me/assignments"), enabled });
 }
 
 export function useAssignmentReport(id: string) {

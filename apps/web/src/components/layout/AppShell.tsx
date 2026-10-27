@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
@@ -13,7 +13,6 @@ import {
   Gauge,
   HeartHandshake,
   Library,
-  LogOut,
   Menu,
   Target,
   TrendingUp,
@@ -23,12 +22,13 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { ROLE_LABEL, useAuth } from "@/features/auth";
-import { PendingAssignments } from "@/features/classroom";
+import { useAuth } from "@/features/auth";
 import { RewardWatcher, StreakXpChip } from "@/features/rewards";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/types/api";
 import { Logo } from "./Logo";
+import { NotificationBell } from "./NotificationBell";
+import { UserMenu } from "./UserMenu";
 
 interface NavItem {
   href: string;
@@ -75,8 +75,29 @@ function sectionsFor(role: Role) {
   ];
 }
 
+const WEEKDAY = new Intl.DateTimeFormat("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" });
+
+/** "Chào buổi tối, An" + thứ ngày: tính sau khi mount để giờ máy chủ và trình duyệt không lệch nhau. */
+function Greeting({ fullName }: { fullName: string }) {
+  const [text, setText] = useState<{ hello: string; date: string } | null>(null);
+  useEffect(() => {
+    const now = new Date();
+    const h = now.getHours();
+    const part = h < 11 ? "sáng" : h < 13 ? "trưa" : h < 18 ? "chiều" : "tối";
+    const date = WEEKDAY.format(now);
+    setText({ hello: `Chào buổi ${part}, ${fullName.trim().split(/\s+/).pop()}`, date: date[0].toUpperCase() + date.slice(1) });
+  }, [fullName]);
+  if (!text) return null;
+  return (
+    <div className="hidden min-w-0 leading-tight lg:block">
+      <p className="truncate font-semibold text-ink">{text.hello}</p>
+      <p className="text-xs text-muted">{text.date}</p>
+    </div>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   if (!user) return null;
@@ -94,12 +115,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         )}
       </div>
-
-      {student && (
-        <div className="border-b border-line px-3 py-2">
-          <StreakXpChip onNavigate={onClose} />
-        </div>
-      )}
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5" aria-label="Điều hướng ứng dụng">
         {sectionsFor(user.role).map((section) => (
@@ -142,23 +157,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         ))}
       </nav>
 
-      <div className="border-t border-line p-4">
-        <div className="flex items-center gap-3">
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-100 font-semibold text-brand-700">
-            {user.full_name.trim().split(/\s+/).pop()?.[0]?.toUpperCase()}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-ink">{user.full_name}</p>
-            <p className="text-xs text-muted">
-              {ROLE_LABEL[user.role]}
-              {user.grade ? ` · Lớp ${user.grade}` : ""}
-            </p>
-          </div>
-          <button onClick={() => void logout()} className="rounded-lg p-2 text-muted hover:bg-brand-50 hover:text-brand-700" aria-label="Đăng xuất" title="Đăng xuất">
-            <LogOut className="size-4.5" />
-          </button>
-        </div>
-      </div>
     </div>
   );
 
@@ -173,15 +171,23 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-line bg-white px-4 lg:hidden print:hidden">
-        <button onClick={() => setOpen(true)} className="rounded-lg p-2 text-ink hover:bg-brand-50" aria-label="Mở menu">
+      {/* Thanh trên cùng cao bằng hàng logo của sidebar để đường viền nối liền */}
+      <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-line bg-white/90 px-3 backdrop-blur sm:px-4 lg:h-16 lg:px-6 print:hidden">
+        <button onClick={() => setOpen(true)} className="rounded-lg p-2 text-ink hover:bg-brand-50 lg:hidden" aria-label="Mở menu">
           <Menu className="size-5" />
         </button>
-        <Logo />
-        {student && <StreakXpChip className="ml-auto gap-2.5 px-2 max-[360px]:[&>*:last-child]:hidden" />}
+        <Link href="/" className="lg:hidden">
+          <Logo className={cn(student && "max-sm:[&>span:last-child]:hidden")} />
+        </Link>
+        <Greeting fullName={user.full_name} />
+        <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          {student && <StreakXpChip className="gap-2.5 px-2 max-[359px]:[&>*:last-child]:hidden" />}
+          {student && <span className="mx-1 hidden h-6 w-px bg-line sm:block" aria-hidden />}
+          <NotificationBell />
+          <UserMenu />
+        </div>
       </header>
       {student && <RewardWatcher />}
-      {student && <PendingAssignments />}
 
       {/* Trang làm đề dùng hết chiều ngang để bảng câu hỏi nằm sát mép phải. */}
       <main className={cn("mx-auto px-4 py-6 sm:px-6 lg:py-8 print:max-w-none print:p-0", pathname.startsWith("/exams/") ? "max-w-none" : "max-w-5xl")}>

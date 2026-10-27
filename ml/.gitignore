@@ -9,4 +9,5 @@ data/splits_with_flagged/
 
 # Trọng số mô hình (lớn): giữ ngoài git, lưu bản sao ở nơi khác (HF Hub / ổ chung)
 runs/**/model.pt
+runs/**/model_fp16.pt
 runs/**/adapter/

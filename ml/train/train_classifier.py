@@ -5,6 +5,9 @@ Khi train dùng mọi nhãn (cả nhãn yếu); khi chấm chỉ dùng nhãn exa
 So sánh với mốc: bộ đoán chủ đề bằng từ khóa (cách pipeline đang làm).
 
     python train/train_classifier.py --data data/splits/classify --out out/classifier
+
+Có đề thật đã gắn nhãn (scripts/merge_real_labels.py) thì: real_train được nhân `--real-upsample` lần vào train,
+real_val dùng để chọn epoch tốt nhất (val tổng hợp đạt ~100% ngay từ đầu nên không phân biệt được), real_test để chấm.
 """
 
 import argparse
@@ -137,6 +140,7 @@ def main() -> None:
     ap.add_argument("--lr", type=float, default=3e-5)
     ap.add_argument("--max-len", type=int, default=256)
     ap.add_argument("--seed", type=int, default=2026)
+    ap.add_argument("--real-upsample", type=int, default=8, help="nhân bản đề thật trong train (0 = không dùng)")
     args = ap.parse_args()
 
     random.seed(args.seed)
@@ -146,7 +150,10 @@ def main() -> None:
     device = "cuda"
 
     train = load(data / "train.jsonl")
-    evals = {s: load(data / f"{s}.jsonl") for s in ("val", "test", "test_unseen_templates")}
+    evals = {s: load(data / f"{s}.jsonl") for s in ("val", "test", "test_unseen_templates", "real_val", "real_test") if (data / f"{s}.jsonl").exists()}
+    if args.real_upsample and (data / "real_train.jsonl").exists():
+        train += load(data / "real_train.jsonl") * args.real_upsample
+    select = "real_val" if "real_val" in evals else "val"
     print(f"train {len(train)} · " + " · ".join(f"{k} {len(v)}" for k, v in evals.items()), flush=True)
 
     tok = AutoTokenizer.from_pretrained(args.model)
@@ -170,9 +177,9 @@ def main() -> None:
             step += 1
             if step % 100 == 0:
                 print(f"epoch {epoch + 1} step {step}/{total} loss {loss.item():.4f} · {(time.time() - t0) / 60:.1f} phút", flush=True)
-        val = evaluate(model, evals["val"], tok, args, device)
-        history.append({"epoch": epoch + 1, "val": val})
-        print(f"== epoch {epoch + 1} val: {json.dumps(val, ensure_ascii=False)}", flush=True)
+        val = evaluate(model, evals[select], tok, args, device)
+        history.append({"epoch": epoch + 1, select: val})
+        print(f"== epoch {epoch + 1} {select}: {json.dumps(val, ensure_ascii=False)}", flush=True)
         if score(val) > best:
             best = score(val)
             torch.save(model.state_dict(), out / "model.pt")

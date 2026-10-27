@@ -20,7 +20,6 @@ from collections import Counter
 from pathlib import Path
 from typing import Iterator
 
-import pyarrow.parquet as pq
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW, OUT = ROOT / "data" / "raw", ROOT / "data" / "unified"
@@ -103,6 +102,8 @@ def clean(t: str) -> str:
 
 
 def rows(name: str, pattern: str = "*.parquet", columns: list[str] | None = None) -> Iterator[tuple[str, dict]]:
+    import pyarrow.parquet as pq  # chỉ cần khi đọc parquet; script train import file này mà không cần pyarrow
+
     for f in sorted((RAW / name).glob(pattern)):
         split = f.name.split("__")[1] if "__" in f.name else "train"
         for batch in pq.ParquetFile(f).iter_batches(batch_size=20000, columns=columns):

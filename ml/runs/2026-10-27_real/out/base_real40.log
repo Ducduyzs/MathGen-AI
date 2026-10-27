@@ -1,0 +1,218 @@
+train 85537 · val 2963 · test 3109 · test_unseen_templates 1033 · real_val 78 · real_test 208
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 4613.71it/s]
+[transformers] [1mXLMRobertaModel LOAD REPORT[0m from: /workspace/models/xlm-roberta-base
+Key                       | Status     |  | 
+--------------------------+------------+--+-
+lm_head.bias              | UNEXPECTED |  | 
+lm_head.layer_norm.bias   | UNEXPECTED |  | 
+lm_head.dense.bias        | UNEXPECTED |  | 
+lm_head.layer_norm.weight | UNEXPECTED |  | 
+lm_head.dense.weight      | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+epoch 1 step 100/5348 loss 2.3961 · 0.4 phút
+epoch 1 step 200/5348 loss 1.0692 · 0.7 phút
+epoch 1 step 300/5348 loss 0.7218 · 1.1 phút
+epoch 1 step 400/5348 loss 0.3042 · 1.4 phút
+epoch 1 step 500/5348 loss 0.2770 · 1.8 phút
+epoch 1 step 600/5348 loss 0.1645 · 2.2 phút
+epoch 1 step 700/5348 loss 0.1758 · 2.5 phút
+epoch 1 step 800/5348 loss 0.1568 · 2.9 phút
+epoch 1 step 900/5348 loss 0.1346 · 3.2 phút
+epoch 1 step 1000/5348 loss 0.0293 · 3.6 phút
+epoch 1 step 1100/5348 loss 0.1043 · 4.0 phút
+epoch 1 step 1200/5348 loss 0.2551 · 4.3 phút
+epoch 1 step 1300/5348 loss 0.0321 · 4.7 phút
+== epoch 1 real_val: {"n": 78, "topic": {"n": 65, "acc": 0.7385, "macro_f1": 0.4177, "keyword_baseline_acc": 0.0615, "acc_by_source": {"vi_reality": 0.7385}}, "grade_band": {"n": 65, "acc": 0.9385, "macro_f1": 0.7336}, "grade": {"n": 65, "acc": 0.6308, "macro_f1": 0.4801, "within_1": 0.8154}, "difficulty": {"n": 65, "mae": 0.0836, "spearman": 0.5383}}
+   lưu mô hình tốt nhất (điểm 0.5438)
+epoch 2 step 1400/5348 loss 0.1019 · 5.1 phút
+epoch 2 step 1500/5348 loss 0.0931 · 5.5 phút
+epoch 2 step 1600/5348 loss 0.1195 · 5.9 phút
+epoch 2 step 1700/5348 loss 0.0232 · 6.3 phút
+epoch 2 step 1800/5348 loss 0.0657 · 6.7 phút
+epoch 2 step 1900/5348 loss 0.0841 · 7.0 phút
+epoch 2 step 2000/5348 loss 0.0106 · 7.4 phút
+epoch 2 step 2100/5348 loss 0.0128 · 7.8 phút
+epoch 2 step 2200/5348 loss 0.0158 · 8.2 phút
+epoch 2 step 2300/5348 loss 0.0097 · 8.6 phút
+epoch 2 step 2400/5348 loss 0.0153 · 9.0 phút
+epoch 2 step 2500/5348 loss 0.0099 · 9.4 phút
+epoch 2 step 2600/5348 loss 0.0084 · 9.8 phút
+== epoch 2 real_val: {"n": 78, "topic": {"n": 65, "acc": 0.7692, "macro_f1": 0.511, "keyword_baseline_acc": 0.0615, "acc_by_source": {"vi_reality": 0.7692}}, "grade_band": {"n": 65, "acc": 0.9231, "macro_f1": 0.7517}, "grade": {"n": 65, "acc": 0.7077, "macro_f1": 0.4922, "within_1": 0.8462}, "difficulty": {"n": 65, "mae": 0.0951, "spearman": 0.5675}}
+   lưu mô hình tốt nhất (điểm 0.5850)
+epoch 3 step 2700/5348 loss 0.0068 · 10.2 phút
+epoch 3 step 2800/5348 loss 0.0612 · 10.6 phút
+epoch 3 step 2900/5348 loss 0.0198 · 11.0 phút
+epoch 3 step 3000/5348 loss 0.0140 · 11.3 phút
+epoch 3 step 3100/5348 loss 0.0059 · 11.7 phút
+epoch 3 step 3200/5348 loss 0.0241 · 12.1 phút
+epoch 3 step 3300/5348 loss 0.0495 · 12.5 phút
+epoch 3 step 3400/5348 loss 0.0047 · 12.9 phút
+epoch 3 step 3500/5348 loss 0.0175 · 13.3 phút
+epoch 3 step 3600/5348 loss 0.0049 · 13.7 phút
+epoch 3 step 3700/5348 loss 0.0245 · 14.1 phút
+epoch 3 step 3800/5348 loss 0.0772 · 14.5 phút
+epoch 3 step 3900/5348 loss 0.0041 · 14.8 phút
+epoch 3 step 4000/5348 loss 0.0600 · 15.2 phút
+== epoch 3 real_val: {"n": 78, "topic": {"n": 65, "acc": 0.7692, "macro_f1": 0.5236, "keyword_baseline_acc": 0.0615, "acc_by_source": {"vi_reality": 0.7692}}, "grade_band": {"n": 65, "acc": 0.9385, "macro_f1": 0.7833}, "grade": {"n": 65, "acc": 0.6769, "macro_f1": 0.4975, "within_1": 0.8615}, "difficulty": {"n": 65, "mae": 0.0712, "spearman": 0.5545}}
+   lưu mô hình tốt nhất (điểm 0.6015)
+epoch 4 step 4100/5348 loss 0.0082 · 15.7 phút
+epoch 4 step 4200/5348 loss 0.0093 · 16.1 phút
+epoch 4 step 4300/5348 loss 0.0029 · 16.4 phút
+epoch 4 step 4400/5348 loss 0.0032 · 16.8 phút
+epoch 4 step 4500/5348 loss 0.0965 · 17.2 phút
+epoch 4 step 4600/5348 loss 0.0030 · 17.6 phút
+epoch 4 step 4700/5348 loss 0.0125 · 18.0 phút
+epoch 4 step 4800/5348 loss 0.0056 · 18.4 phút
+epoch 4 step 4900/5348 loss 0.0027 · 18.8 phút
+epoch 4 step 5000/5348 loss 0.0024 · 19.2 phút
+epoch 4 step 5100/5348 loss 0.0129 · 19.6 phút
+epoch 4 step 5200/5348 loss 0.0252 · 20.0 phút
+epoch 4 step 5300/5348 loss 0.0264 · 20.3 phút
+== epoch 4 real_val: {"n": 78, "topic": {"n": 65, "acc": 0.7692, "macro_f1": 0.5236, "keyword_baseline_acc": 0.0615, "acc_by_source": {"vi_reality": 0.7692}}, "grade_band": {"n": 65, "acc": 0.9385, "macro_f1": 0.7833}, "grade": {"n": 65, "acc": 0.6769, "macro_f1": 0.4975, "within_1": 0.8615}, "difficulty": {"n": 65, "mae": 0.0673, "spearman": 0.5795}}
+== KẾT QUẢ CUỐI
+{
+  "val": {
+    "n": 2963,
+    "topic": {
+      "n": 792,
+      "acc": 1.0,
+      "macro_f1": 1.0,
+      "keyword_baseline_acc": 0.8447,
+      "acc_by_source": {
+        "synthetic_vi": 1.0,
+        "svamp": 1.0
+      }
+    },
+    "grade_band": {
+      "n": 2923,
+      "acc": 0.9839,
+      "macro_f1": 0.9881
+    },
+    "grade": {
+      "n": 752,
+      "acc": 1.0,
+      "macro_f1": 1.0,
+      "within_1": 1.0
+    },
+    "difficulty": {
+      "n": 752,
+      "mae": 0.0238,
+      "spearman": 0.974
+    }
+  },
+  "test": {
+    "n": 3109,
+    "topic": {
+      "n": 1067,
+      "acc": 1.0,
+      "macro_f1": 1.0,
+      "keyword_baseline_acc": 0.6345,
+      "acc_by_source": {
+        "svamp": 1.0,
+        "synthetic_vi": 1.0
+      }
+    },
+    "grade_band": {
+      "n": 2788,
+      "acc": 0.9803,
+      "macro_f1": 0.9856
+    },
+    "grade": {
+      "n": 746,
+      "acc": 1.0,
+      "macro_f1": 1.0,
+      "within_1": 1.0
+    },
+    "difficulty": {
+      "n": 746,
+      "mae": 0.0242,
+      "spearman": 0.9728
+    }
+  },
+  "test_unseen_templates": {
+    "n": 1033,
+    "topic": {
+      "n": 1033,
+      "acc": 0.3969,
+      "macro_f1": 0.6794,
+      "keyword_baseline_acc": 0.2081,
+      "acc_by_source": {
+        "synthetic_vi": 0.3969
+      }
+    },
+    "grade_band": {
+      "n": 1033,
+      "acc": 0.4327,
+      "macro_f1": 0.3184
+    },
+    "grade": {
+      "n": 1033,
+      "acc": 0.4066,
+      "macro_f1": 0.4493,
+      "within_1": 0.4066
+    },
+    "difficulty": {
+      "n": 1033,
+      "mae": 0.172,
+      "spearman": -0.2967
+    }
+  },
+  "real_val": {
+    "n": 78,
+    "topic": {
+      "n": 65,
+      "acc": 0.7692,
+      "macro_f1": 0.5236,
+      "keyword_baseline_acc": 0.0615,
+      "acc_by_source": {
+        "vi_reality": 0.7692
+      }
+    },
+    "grade_band": {
+      "n": 65,
+      "acc": 0.9385,
+      "macro_f1": 0.7833
+    },
+    "grade": {
+      "n": 65,
+      "acc": 0.6769,
+      "macro_f1": 0.4975,
+      "within_1": 0.8615
+    },
+    "difficulty": {
+      "n": 65,
+      "mae": 0.0712,
+      "spearman": 0.5545
+    }
+  },
+  "real_test": {
+    "n": 208,
+    "topic": {
+      "n": 176,
+      "acc": 0.8182,
+      "macro_f1": 0.4217,
+      "keyword_baseline_acc": 0.0398,
+      "acc_by_source": {
+        "vi_reality": 0.8182
+      }
+    },
+    "grade_band": {
+      "n": 176,
+      "acc": 0.9375,
+      "macro_f1": 0.4889
+    },
+    "grade": {
+      "n": 176,
+      "acc": 0.75,
+      "macro_f1": 0.5174,
+      "within_1": 0.858
+    },
+    "difficulty": {
+      "n": 176,
+      "mae": 0.1048,
+      "spearman": 0.4694
+    }
+  }
+}

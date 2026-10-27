@@ -19,6 +19,7 @@ ml/data/unified/
 ml/data/splits/
 ml/data/splits_with_flagged/
 ml/runs/**/model.pt
+ml/runs/**/model_fp16.pt
 ml/runs/**/adapter/
 ml/runs/**/tokenizer/
 *.part

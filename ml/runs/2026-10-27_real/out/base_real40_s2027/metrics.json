@@ -1,0 +1,319 @@
+{
+  "model": "/workspace/models/xlm-roberta-base",
+  "args": {
+    "data": "data/splits/classify",
+    "out": "out/base_real40_s2027",
+    "model": "/workspace/models/xlm-roberta-base",
+    "epochs": 4,
+    "bs": 64,
+    "lr": 3e-05,
+    "max_len": 256,
+    "seed": 2027,
+    "real_upsample": 40
+  },
+  "labels": {
+    "topic": [
+      "arithmetic",
+      "algebra",
+      "functions",
+      "trigonometry",
+      "calculus",
+      "exp_log",
+      "sequences",
+      "geometry",
+      "coordinates",
+      "probability_counting",
+      "statistics",
+      "number_theory",
+      "precalculus",
+      "other"
+    ],
+    "grade_band": [
+      "primary",
+      "lower_secondary",
+      "upper_secondary",
+      "school",
+      "competition"
+    ],
+    "grade": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "real_val": {
+        "n": 78,
+        "topic": {
+          "n": 65,
+          "acc": 0.7231,
+          "macro_f1": 0.3972,
+          "keyword_baseline_acc": 0.0615,
+          "acc_by_source": {
+            "vi_reality": 0.7231
+          }
+        },
+        "grade_band": {
+          "n": 65,
+          "acc": 0.9385,
+          "macro_f1": 0.7336
+        },
+        "grade": {
+          "n": 65,
+          "acc": 0.6769,
+          "macro_f1": 0.5633,
+          "within_1": 0.8462
+        },
+        "difficulty": {
+          "n": 65,
+          "mae": 0.0877,
+          "spearman": 0.5573
+        }
+      }
+    },
+    {
+      "epoch": 2,
+      "real_val": {
+        "n": 78,
+        "topic": {
+          "n": 65,
+          "acc": 0.7692,
+          "macro_f1": 0.472,
+          "keyword_baseline_acc": 0.0615,
+          "acc_by_source": {
+            "vi_reality": 0.7692
+          }
+        },
+        "grade_band": {
+          "n": 65,
+          "acc": 0.9385,
+          "macro_f1": 0.7336
+        },
+        "grade": {
+          "n": 65,
+          "acc": 0.6769,
+          "macro_f1": 0.4958,
+          "within_1": 0.8462
+        },
+        "difficulty": {
+          "n": 65,
+          "mae": 0.0729,
+          "spearman": 0.5139
+        }
+      }
+    },
+    {
+      "epoch": 3,
+      "real_val": {
+        "n": 78,
+        "topic": {
+          "n": 65,
+          "acc": 0.7846,
+          "macro_f1": 0.4921,
+          "keyword_baseline_acc": 0.0615,
+          "acc_by_source": {
+            "vi_reality": 0.7846
+          }
+        },
+        "grade_band": {
+          "n": 65,
+          "acc": 0.9385,
+          "macro_f1": 0.7336
+        },
+        "grade": {
+          "n": 65,
+          "acc": 0.6769,
+          "macro_f1": 0.4941,
+          "within_1": 0.8615
+        },
+        "difficulty": {
+          "n": 65,
+          "mae": 0.0727,
+          "spearman": 0.5453
+        }
+      }
+    },
+    {
+      "epoch": 4,
+      "real_val": {
+        "n": 78,
+        "topic": {
+          "n": 65,
+          "acc": 0.7538,
+          "macro_f1": 0.3954,
+          "keyword_baseline_acc": 0.0615,
+          "acc_by_source": {
+            "vi_reality": 0.7538
+          }
+        },
+        "grade_band": {
+          "n": 65,
+          "acc": 0.9385,
+          "macro_f1": 0.7336
+        },
+        "grade": {
+          "n": 65,
+          "acc": 0.6769,
+          "macro_f1": 0.5721,
+          "within_1": 0.8769
+        },
+        "difficulty": {
+          "n": 65,
+          "mae": 0.0687,
+          "spearman": 0.5204
+        }
+      }
+    }
+  ],
+  "final": {
+    "val": {
+      "n": 2963,
+      "topic": {
+        "n": 792,
+        "acc": 1.0,
+        "macro_f1": 1.0,
+        "keyword_baseline_acc": 0.8447,
+        "acc_by_source": {
+          "synthetic_vi": 1.0,
+          "svamp": 1.0
+        }
+      },
+      "grade_band": {
+        "n": 2923,
+        "acc": 0.9836,
+        "macro_f1": 0.9878
+      },
+      "grade": {
+        "n": 752,
+        "acc": 1.0,
+        "macro_f1": 1.0,
+        "within_1": 1.0
+      },
+      "difficulty": {
+        "n": 752,
+        "mae": 0.0322,
+        "spearman": 0.971
+      }
+    },
+    "test": {
+      "n": 3109,
+      "topic": {
+        "n": 1067,
+        "acc": 1.0,
+        "macro_f1": 1.0,
+        "keyword_baseline_acc": 0.6345,
+        "acc_by_source": {
+          "svamp": 1.0,
+          "synthetic_vi": 1.0
+        }
+      },
+      "grade_band": {
+        "n": 2788,
+        "acc": 0.9828,
+        "macro_f1": 0.9877
+      },
+      "grade": {
+        "n": 746,
+        "acc": 1.0,
+        "macro_f1": 1.0,
+        "within_1": 1.0
+      },
+      "difficulty": {
+        "n": 746,
+        "mae": 0.0317,
+        "spearman": 0.9645
+      }
+    },
+    "test_unseen_templates": {
+      "n": 1033,
+      "topic": {
+        "n": 1033,
+        "acc": 0.2662,
+        "macro_f1": 0.329,
+        "keyword_baseline_acc": 0.2081,
+        "acc_by_source": {
+          "synthetic_vi": 0.2662
+        }
+      },
+      "grade_band": {
+        "n": 1033,
+        "acc": 0.4085,
+        "macro_f1": 0.2041
+      },
+      "grade": {
+        "n": 1033,
+        "acc": 0.3301,
+        "macro_f1": 0.2211,
+        "within_1": 0.3301
+      },
+      "difficulty": {
+        "n": 1033,
+        "mae": 0.1547,
+        "spearman": -0.402
+      }
+    },
+    "real_val": {
+      "n": 78,
+      "topic": {
+        "n": 65,
+        "acc": 0.7846,
+        "macro_f1": 0.4921,
+        "keyword_baseline_acc": 0.0615,
+        "acc_by_source": {
+          "vi_reality": 0.7846
+        }
+      },
+      "grade_band": {
+        "n": 65,
+        "acc": 0.9385,
+        "macro_f1": 0.7336
+      },
+      "grade": {
+        "n": 65,
+        "acc": 0.6769,
+        "macro_f1": 0.4941,
+        "within_1": 0.8615
+      },
+      "difficulty": {
+        "n": 65,
+        "mae": 0.0727,
+        "spearman": 0.5453
+      }
+    },
+    "real_test": {
+      "n": 208,
+      "topic": {
+        "n": 176,
+        "acc": 0.7784,
+        "macro_f1": 0.3653,
+        "keyword_baseline_acc": 0.0398,
+        "acc_by_source": {
+          "vi_reality": 0.7784
+        }
+      },
+      "grade_band": {
+        "n": 176,
+        "acc": 0.9375,
+        "macro_f1": 0.4889
+      },
+      "grade": {
+        "n": 176,
+        "acc": 0.7614,
+        "macro_f1": 0.499,
+        "within_1": 0.8523
+      },
+      "difficulty": {
+        "n": 176,
+        "mae": 0.0942,
+        "spearman": 0.5413
+      }
+    }
+  },
+  "minutes": 20.8
+}

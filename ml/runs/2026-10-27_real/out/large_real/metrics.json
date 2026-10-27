@@ -1,0 +1,288 @@
+{
+  "model": "/workspace/models/xlm-roberta-large",
+  "args": {
+    "data": "data/splits/classify",
+    "out": "out/large_real",
+    "model": "/workspace/models/xlm-roberta-large",
+    "epochs": 3,
+    "bs": 32,
+    "lr": 1.5e-05,
+    "max_len": 256,
+    "seed": 2026,
+    "real_upsample": 20
+  },
+  "labels": {
+    "topic": [
+      "arithmetic",
+      "algebra",
+      "functions",
+      "trigonometry",
+      "calculus",
+      "exp_log",
+      "sequences",
+      "geometry",
+      "coordinates",
+      "probability_counting",
+      "statistics",
+      "number_theory",
+      "precalculus",
+      "other"
+    ],
+    "grade_band": [
+      "primary",
+      "lower_secondary",
+      "upper_secondary",
+      "school",
+      "competition"
+    ],
+    "grade": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "real_val": {
+        "n": 78,
+        "topic": {
+          "n": 65,
+          "acc": 0.7231,
+          "macro_f1": 0.43,
+          "keyword_baseline_acc": 0.0615,
+          "acc_by_source": {
+            "vi_reality": 0.7231
+          }
+        },
+        "grade_band": {
+          "n": 65,
+          "acc": 0.9077,
+          "macro_f1": 0.6004
+        },
+        "grade": {
+          "n": 65,
+          "acc": 0.6923,
+          "macro_f1": 0.4014,
+          "within_1": 0.7846
+        },
+        "difficulty": {
+          "n": 65,
+          "mae": 0.0824,
+          "spearman": 0.5932
+        }
+      }
+    },
+    {
+      "epoch": 2,
+      "real_val": {
+        "n": 78,
+        "topic": {
+          "n": 65,
+          "acc": 0.8154,
+          "macro_f1": 0.536,
+          "keyword_baseline_acc": 0.0615,
+          "acc_by_source": {
+            "vi_reality": 0.8154
+          }
+        },
+        "grade_band": {
+          "n": 65,
+          "acc": 0.9385,
+          "macro_f1": 0.7336
+        },
+        "grade": {
+          "n": 65,
+          "acc": 0.6923,
+          "macro_f1": 0.457,
+          "within_1": 0.8462
+        },
+        "difficulty": {
+          "n": 65,
+          "mae": 0.0749,
+          "spearman": 0.5231
+        }
+      }
+    },
+    {
+      "epoch": 3,
+      "real_val": {
+        "n": 78,
+        "topic": {
+          "n": 65,
+          "acc": 0.8154,
+          "macro_f1": 0.536,
+          "keyword_baseline_acc": 0.0615,
+          "acc_by_source": {
+            "vi_reality": 0.8154
+          }
+        },
+        "grade_band": {
+          "n": 65,
+          "acc": 0.9231,
+          "macro_f1": 0.7016
+        },
+        "grade": {
+          "n": 65,
+          "acc": 0.6769,
+          "macro_f1": 0.4581,
+          "within_1": 0.8154
+        },
+        "difficulty": {
+          "n": 65,
+          "mae": 0.0803,
+          "spearman": 0.5489
+        }
+      }
+    }
+  ],
+  "final": {
+    "val": {
+      "n": 2963,
+      "topic": {
+        "n": 792,
+        "acc": 1.0,
+        "macro_f1": 1.0,
+        "keyword_baseline_acc": 0.8447,
+        "acc_by_source": {
+          "synthetic_vi": 1.0,
+          "svamp": 1.0
+        }
+      },
+      "grade_band": {
+        "n": 2923,
+        "acc": 0.9846,
+        "macro_f1": 0.9886
+      },
+      "grade": {
+        "n": 752,
+        "acc": 1.0,
+        "macro_f1": 1.0,
+        "within_1": 1.0
+      },
+      "difficulty": {
+        "n": 752,
+        "mae": 0.0412,
+        "spearman": 0.9694
+      }
+    },
+    "test": {
+      "n": 3109,
+      "topic": {
+        "n": 1067,
+        "acc": 1.0,
+        "macro_f1": 1.0,
+        "keyword_baseline_acc": 0.6345,
+        "acc_by_source": {
+          "svamp": 1.0,
+          "synthetic_vi": 1.0
+        }
+      },
+      "grade_band": {
+        "n": 2788,
+        "acc": 0.9817,
+        "macro_f1": 0.9869
+      },
+      "grade": {
+        "n": 746,
+        "acc": 1.0,
+        "macro_f1": 1.0,
+        "within_1": 1.0
+      },
+      "difficulty": {
+        "n": 746,
+        "mae": 0.042,
+        "spearman": 0.9675
+      }
+    },
+    "test_unseen_templates": {
+      "n": 1033,
+      "topic": {
+        "n": 1033,
+        "acc": 0.3475,
+        "macro_f1": 0.6515,
+        "keyword_baseline_acc": 0.2081,
+        "acc_by_source": {
+          "synthetic_vi": 0.3475
+        }
+      },
+      "grade_band": {
+        "n": 1033,
+        "acc": 0.4327,
+        "macro_f1": 0.3184
+      },
+      "grade": {
+        "n": 1033,
+        "acc": 0.3475,
+        "macro_f1": 0.3778,
+        "within_1": 0.3475
+      },
+      "difficulty": {
+        "n": 1033,
+        "mae": 0.1312,
+        "spearman": -0.3475
+      }
+    },
+    "real_val": {
+      "n": 78,
+      "topic": {
+        "n": 65,
+        "acc": 0.8154,
+        "macro_f1": 0.536,
+        "keyword_baseline_acc": 0.0615,
+        "acc_by_source": {
+          "vi_reality": 0.8154
+        }
+      },
+      "grade_band": {
+        "n": 65,
+        "acc": 0.9385,
+        "macro_f1": 0.7336
+      },
+      "grade": {
+        "n": 65,
+        "acc": 0.6923,
+        "macro_f1": 0.457,
+        "within_1": 0.8462
+      },
+      "difficulty": {
+        "n": 65,
+        "mae": 0.0749,
+        "spearman": 0.5231
+      }
+    },
+    "real_test": {
+      "n": 208,
+      "topic": {
+        "n": 176,
+        "acc": 0.8409,
+        "macro_f1": 0.4453,
+        "keyword_baseline_acc": 0.0398,
+        "acc_by_source": {
+          "vi_reality": 0.8409
+        }
+      },
+      "grade_band": {
+        "n": 176,
+        "acc": 0.9375,
+        "macro_f1": 0.4705
+      },
+      "grade": {
+        "n": 176,
+        "acc": 0.7898,
+        "macro_f1": 0.4955,
+        "within_1": 0.8977
+      },
+      "difficulty": {
+        "n": 176,
+        "mae": 0.0927,
+        "spearman": 0.4839
+      }
+    }
+  },
+  "minutes": 46.5
+}

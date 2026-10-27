@@ -40,10 +40,42 @@ class SkillScore(Base):
 
 
 class DailyActivity(Base):
-    """Số bài mỗi ngày (giờ Việt Nam) để tính mục tiêu ngày và chuỗi ngày học."""
+    """Bộ đếm mỗi ngày (giờ Việt Nam): mục tiêu ngày, chuỗi ngày học, XP và nhiệm vụ hằng ngày."""
 
     __tablename__ = "daily_activity"
 
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     day: Mapped[date] = mapped_column(Date, primary_key=True)
     count: Mapped[int] = mapped_column(Integer, default=0)
+    correct: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    xp: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # Chuỗi đúng liên tiếp khi luyện tập (nối qua các lần nộp) và chuỗi dài nhất trong ngày (mọi hoạt động)
+    combo: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    best_combo: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    exams: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    arena_runs: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # Ngày nghỉ được giữ chuỗi bằng một lượt đóng băng
+    frozen: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # Mã nhiệm vụ đã hoàn thành (đã cộng XP) trong ngày
+    quests: Mapped[list] = mapped_column(JSONB, default=list, server_default="[]")
+
+
+class RewardProfile(Base):
+    """Tổng XP, số câu đúng và lượt đóng băng chuỗi còn lại của một học sinh."""
+
+    __tablename__ = "reward_profiles"
+
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    xp: Mapped[int] = mapped_column(Integer, default=0)
+    correct: Mapped[int] = mapped_column(Integer, default=0)
+    freezes: Mapped[int] = mapped_column(Integer, default=1)
+    longest_streak: Mapped[int] = mapped_column(Integer, default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class UserBadge(Base):
+    __tablename__ = "user_badges"
+
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    code: Mapped[str] = mapped_column(String(32), primary_key=True)
+    earned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

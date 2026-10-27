@@ -255,7 +255,7 @@ async def submit(db: AsyncSession, user: User, exam_id: str, body: SubmitExamIn)
     answers = {k: v.model_dump() for k, v in body.answers.items() if k in ids}
     result = grade_exam(exam, qs, answers, datetime.now(UTC))
     exam.answers, exam.result, exam.submitted_at = answers, result.model_dump(mode="json"), result.submitted_at
-    await learning.record_activity(db, user.id, len(answers))
+    await learning.record_activity(db, user.id, [i.is_correct for q, i in zip(qs, result.items) if q.id in answers], "exam")
     await db.commit()
     # Sau khi commit mới đẩy task: worker cập nhật điểm kỹ năng (trọng số nhỏ hơn luyện tập từng bài)
     learning.schedule_exam_scores(user.id, [(q.skill_code, i.is_correct) for q, i in zip(qs, result.items)])

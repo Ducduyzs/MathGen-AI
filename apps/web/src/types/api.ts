@@ -73,6 +73,8 @@ export interface AttemptResult {
   correct_answer: AnswerValue;
   correct_answer_display: string;
   solution: string[];
+  /** XP nhận được (gồm thưởng mục tiêu ngày và nhiệm vụ vừa xong). */
+  xp_gained?: number;
 }
 
 export interface SkillScore extends Skill {
@@ -650,4 +652,44 @@ export interface ChildReport {
   exams: ExamSummary[];
   assignments: Assignment[];
   arena: ArenaBest[];
+}
+
+// ---- Phần thưởng: XP, nhiệm vụ hằng ngày, đóng băng chuỗi, huy hiệu
+
+export interface Quest {
+  code: string;
+  title: string;
+  target: number;
+  progress: number;
+  reward: number;
+  done: boolean;
+}
+
+export interface BadgeInfo {
+  code: string;
+  title: string;
+  description: string;
+  earned_at: string | null;
+}
+
+export interface CalendarDay {
+  day: string;
+  count: number;
+  status: "met" | "frozen" | "partial" | "none";
+}
+
+export interface Rewards {
+  today: string;
+  xp_total: number;
+  xp_today: number;
+  daily_goal: number;
+  today_attempts: number;
+  streak_days: number;
+  longest_streak: number;
+  freezes: number;
+  max_freezes: number;
+  freeze_every: number;
+  quests: Quest[];
+  badges: BadgeInfo[];
+  calendar: CalendarDay[];
 }

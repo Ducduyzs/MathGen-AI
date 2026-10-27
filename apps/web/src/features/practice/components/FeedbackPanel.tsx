@@ -1,7 +1,16 @@
-import { CircleCheck, CircleX } from "lucide-react";
+import { CircleCheck, CircleX, Zap } from "lucide-react";
 import { MathText } from "@/components/math";
 import { cn } from "@/lib/utils";
 import type { AttemptResult } from "@/types/api";
+
+function XpGained({ xp }: { xp?: number }) {
+  if (!xp) return null;
+  return (
+    <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-sm font-semibold text-brand-700 ring-1 ring-brand-200">
+      <Zap className="size-3.5" aria-hidden />+{xp} XP
+    </span>
+  );
+}
 
 export function FeedbackPanel({ result }: { result: AttemptResult }) {
   return (
@@ -15,11 +24,13 @@ export function FeedbackPanel({ result }: { result: AttemptResult }) {
       {result.is_correct ? (
         <p className="flex items-center gap-2 font-semibold text-success-700">
           <CircleCheck className="size-5" aria-hidden /> Chính xác!
+          <XpGained xp={result.xp_gained} />
         </p>
       ) : (
         <>
           <p className="flex items-center gap-2 font-semibold text-danger-700">
             <CircleX className="size-5" aria-hidden /> Chưa đúng
+            <XpGained xp={result.xp_gained} />
           </p>
           <p className="mt-2 text-ink">
             Đáp án đúng: <MathText text={result.correct_answer_display} className="font-medium" />

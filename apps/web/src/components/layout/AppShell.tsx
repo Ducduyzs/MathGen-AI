@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
+  Award,
   ClipboardCheck,
   Database,
   FileStack,
@@ -23,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { ROLE_LABEL, useAuth } from "@/features/auth";
+import { RewardWatcher, StreakXpChip } from "@/features/rewards";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/types/api";
 import { Logo } from "./Logo";
@@ -42,6 +44,7 @@ const STUDENT: NavItem[] = [
   { href: "/arena", label: "Đấu trường", icon: Trophy },
   { href: "/classes", label: "Lớp học", icon: Users },
   { href: "/me/progress", label: "Tiến độ", icon: TrendingUp },
+  { href: "/me/achievements", label: "Thành tích", icon: Award },
   { href: "/problems", label: "Ngân hàng bài", icon: Library },
 ];
 
@@ -76,6 +79,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   if (!user) return null;
+  const student = user.role === "student";
 
   const sidebar = (onClose?: () => void) => (
     <div className="flex h-full flex-col">
@@ -89,6 +93,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         )}
       </div>
+
+      {student && (
+        <div className="border-b border-line px-3 py-2">
+          <StreakXpChip onNavigate={onClose} />
+        </div>
+      )}
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5" aria-label="Điều hướng ứng dụng">
         {sectionsFor(user.role).map((section) => (
@@ -167,7 +177,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Menu className="size-5" />
         </button>
         <Logo />
+        {student && <StreakXpChip className="ml-auto gap-2.5 px-2 max-[360px]:[&>*:last-child]:hidden" />}
       </header>
+      {student && <RewardWatcher />}
 
       {/* Trang làm đề dùng hết chiều ngang để bảng câu hỏi nằm sát mép phải. */}
       <main className={cn("mx-auto px-4 py-6 sm:px-6 lg:py-8 print:max-w-none print:p-0", pathname.startsWith("/exams/") ? "max-w-none" : "max-w-5xl")}>

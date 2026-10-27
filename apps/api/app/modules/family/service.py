@@ -89,13 +89,14 @@ async def _summaries(db: AsyncSession, parent: User, only: list[str] | None = No
     rows = (await db.execute(stmt)).all()
     days = await learning.activity_by_user(db, [u.id for u, _ in rows], STREAK_WINDOW_DAYS)
     today, goal = learning.today_vn(), get_settings().daily_goal
+    streaks = await learning.streaks_by_user(db, days)
     out = []
     for u, linked_at in rows:
         d = days[u.id]
         statuses = [a.status for a in await classroom.my_assignments(db, u) if a.status]
         out.append(ChildSummary(
             id=u.id, full_name=u.full_name, grade=u.grade, linked_at=linked_at, daily_goal=goal, today_problems=d.get(today, 0),
-            week_problems=sum(n for day, n in d.items() if day > today - timedelta(days=7)), streak_days=learning.streak(d, goal, today),
+            week_problems=sum(n for day, n in d.items() if day > today - timedelta(days=7)), streak_days=streaks[u.id],
             pending_assignments=sum(1 for a in statuses if a in ("todo", "in_progress")), missed_assignments=sum(1 for a in statuses if a == "missed"),
             last_active=max((day for day, n in d.items() if n > 0), default=None),
         ))

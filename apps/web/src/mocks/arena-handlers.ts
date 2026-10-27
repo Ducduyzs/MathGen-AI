@@ -33,8 +33,8 @@ interface Ctx {
   templates: (pool: ArenaPool) => { code: string; difficulty: number }[];
   generate: (codes: string[]) => ExamSource[] | null;
   grade: (q: ExamSource, a: ExamAnswer | undefined) => number;
-  /** Cộng số bài đã làm hôm nay (chuỗi ngày học, bảng xếp hạng lớp). */
-  addActivity: (userId: string, n: number) => void;
+  /** Ghi các câu đã làm hôm nay (chuỗi ngày học, XP, nhiệm vụ, bảng xếp hạng lớp). */
+  addActivity: (userId: string, results: boolean[]) => void;
 }
 
 const g = globalThis as unknown as { __mathgenArena?: Map<string, MockRun> };
@@ -66,7 +66,7 @@ function finalize(ctx: Ctx, r: MockRun) {
   if (r.finished_at) return;
   r.finished_at = new Date(Math.min(Date.now(), new Date(r.ends_at).getTime())).toISOString();
   r.current = null;
-  ctx.addActivity(r.user_id, r.history.filter((h) => h.given).length);
+  ctx.addActivity(r.user_id, r.history.filter((h) => h.given).map((h) => h.is_correct));
 }
 
 function bestPerUser(pool: ArenaPool, duration: number, since: string | null) {

@@ -4,7 +4,7 @@ from datetime import date, timedelta
 import pytest
 
 from app.modules.learning.grading import grade, parse_number
-from app.modules.learning.service import streak
+from app.modules.learning.rewards import streak
 from app.modules.learning.tasks import next_score
 
 

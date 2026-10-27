@@ -13,7 +13,6 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.core.errors import ApiError
 from app.modules.classroom.models import Assignment, ClassMember, Classroom
 from app.modules.classroom.schemas import (
@@ -413,12 +412,12 @@ async def leaderboard(db: AsyncSession, user: User, class_id: str) -> list[Leade
 
     today = learning.today_vn()
     days = await learning.activity_by_user(db, ids, STREAK_WINDOW_DAYS)
-    goal = get_settings().daily_goal
+    streaks = await learning.streaks_by_user(db, days)
     rows = [
         LeaderboardRow(id=m.id, full_name=m.full_name, is_me=m.id == user.id, average_score=_mean(scores[m.id]),
                        assignments_done=len(scores[m.id]),
                        week_problems=sum(n for d, n in days[m.id].items() if d > today - timedelta(days=7)),
-                       streak_days=learning.streak(days[m.id], goal, today))
+                       streak_days=streaks[m.id])
         for m in members
     ]
     rows.sort(key=lambda r: (r.average_score is None, -(r.average_score or 0), -r.week_problems, r.full_name))

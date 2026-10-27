@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
@@ -38,6 +38,7 @@ class AttemptResult(BaseModel):
     correct_answer: dict
     correct_answer_display: str
     solution: list[str]
+    xp_gained: int = 0
 
 
 class SkillScoreOut(SkillOut):
@@ -61,3 +62,41 @@ class AttemptSummary(BaseModel):
     skill: SkillOut
     is_correct: bool
     created_at: datetime
+
+
+class QuestOut(BaseModel):
+    code: str
+    title: str
+    target: int
+    progress: int
+    reward: int
+    done: bool
+
+
+class BadgeOut(BaseModel):
+    code: str
+    title: str
+    description: str
+    earned_at: datetime | None
+
+
+class CalendarDay(BaseModel):
+    day: date
+    count: int
+    status: Literal["met", "frozen", "partial", "none"]
+
+
+class RewardsOut(BaseModel):
+    today: date
+    xp_total: int
+    xp_today: int
+    daily_goal: int
+    today_attempts: int
+    streak_days: int
+    longest_streak: int
+    freezes: int
+    max_freezes: int
+    freeze_every: int
+    quests: list[QuestOut]
+    badges: list[BadgeOut]
+    calendar: list[CalendarDay]

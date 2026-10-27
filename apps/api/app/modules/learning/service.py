@@ -1,19 +1,20 @@
 import logging
 import random
+from collections.abc import Sequence
 from datetime import UTC, date, datetime, timedelta, timezone
 
 from redis.asyncio import Redis
 from sqlalchemy import func, select
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.errors import ApiError
-from app.modules.learning import tasks
+from app.modules.learning import rewards, tasks
 from app.modules.learning.grading import grade
 from app.modules.learning.models import Attempt, DailyActivity, SkillScore
-from app.modules.learning.schemas import AttemptIn, AttemptResult, AttemptSummary, ProgressOut, SkillScoreOut
+from app.modules.learning.rewards import RewardEvent
+from app.modules.learning.schemas import AttemptIn, AttemptResult, AttemptSummary, ProgressOut, RewardsOut, SkillScoreOut
 from app.modules.problem_bank import service as bank
 from app.modules.problem_bank.models import Problem
 from app.modules.problem_bank.schemas import PublicProblem, SkillOut
@@ -87,7 +88,7 @@ async def submit(db: AsyncSession, user: User, body: AttemptIn, idempotency_key:
     attempt = Attempt(user_id=user.id, problem_id=p.id, client_attempt_id=key, answer=answer,
                       is_correct=grade(p.answer, answer), time_ms=body.time_ms, hints_used=body.hints_used)
     db.add(attempt)
-    await record_activity(db, user.id, 1)
+    event = await record_activity(db, user.id, [attempt.is_correct], "practice", hints=body.hints_used)
     try:
         await db.commit()
     except IntegrityError:  # hai request cùng khóa chạy song song: bản kia đã ghi trước
@@ -97,17 +98,19 @@ async def submit(db: AsyncSession, user: User, body: AttemptIn, idempotency_key:
 
     # Sau khi commit mới đẩy task: worker cập nhật điểm kỹ năng (dev/test: chạy ngay trong tiến trình).
     tasks.update_skill_score.delay(user.id, p.skill_code, attempt.is_correct, body.hints_used)
-    return _result(attempt, p)
+    out = _result(attempt, p)
+    out.xp_gained = event.xp
+    return out
 
 
-async def record_activity(db: AsyncSession, user_id: str, count: int) -> None:
-    """Cộng số bài đã làm hôm nay (giờ Việt Nam). Không commit: người gọi commit cùng giao dịch của mình."""
-    if count <= 0:
-        return
-    await db.execute(
-        insert(DailyActivity).values(user_id=user_id, day=today_vn(), count=count)
-        .on_conflict_do_update(index_elements=["user_id", "day"], set_={"count": DailyActivity.count + count})
-    )
+async def record_activity(db: AsyncSession, user_id: str, results: Sequence[bool], kind: rewards.Kind, hints: int = 0) -> RewardEvent:
+    """Ghi các câu vừa làm hôm nay (giờ Việt Nam): mục tiêu ngày, chuỗi, XP, nhiệm vụ, huy hiệu.
+
+    Không commit: người gọi commit cùng giao dịch của mình.
+    """
+    if not results:
+        return RewardEvent()
+    return await rewards.record(db, user_id, results, kind, get_settings().daily_goal, today_vn(), hints)
 
 
 def schedule_exam_scores(user_id: str, outcomes: list[tuple[str, bool]]) -> None:
@@ -116,15 +119,13 @@ def schedule_exam_scores(user_id: str, outcomes: list[tuple[str, bool]]) -> None
         tasks.apply_exam_result.delay(user_id, outcomes)
 
 
-def streak(days: dict[date, int], goal: int, today: date) -> int:
-    """Số ngày liên tiếp đạt mục tiêu, tính cả hôm nay nếu đã đạt (chưa đạt hôm nay thì chuỗi vẫn giữ từ hôm qua)."""
-    d = today if days.get(today, 0) >= goal else today - timedelta(days=1)
-    n = 0
-    while days.get(d, 0) >= goal:
-        n += 1
-        d -= timedelta(days=1)
-    return n
+async def streaks_by_user(db: AsyncSession, days_by_user: dict[str, dict[date, int]]) -> dict[str, int]:
+    """Chuỗi ngày học (tính cả lượt đóng băng) từ kết quả `activity_by_user`."""
+    return await rewards.streaks(db, days_by_user, get_settings().daily_goal, today_vn())
 
+
+async def rewards_summary(db: AsyncSession, user: User) -> RewardsOut:
+    return await rewards.summary(db, user.id, get_settings().daily_goal, today_vn())
 
 
 async def activity_by_user(db: AsyncSession, user_ids: list[str], days: int) -> dict[str, dict[date, int]]:
@@ -151,7 +152,7 @@ async def progress(db: AsyncSession, user: User) -> ProgressOut:
         skills=[SkillScoreOut(code=s.code, name=s.name, score=scores[s.code].score if s.code in scores else 0.5,
                               n_attempts=scores[s.code].n_attempts if s.code in scores else 0) for s in skills],
         total_attempts=total, correct_attempts=correct, daily_goal=goal, today_attempts=days.get(today_vn(), 0),
-        streak_days=streak(days, goal, today_vn()),
+        streak_days=(await rewards.streaks(db, {user.id: days}, goal, today_vn()))[user.id],
     )
 
 

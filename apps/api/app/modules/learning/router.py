@@ -5,7 +5,7 @@ from fastapi import APIRouter, Header, Query
 from app.core.deps import CurrentUser, Db
 from app.core.redis import get_redis
 from app.modules.learning import service
-from app.modules.learning.schemas import AttemptIn, AttemptResult, AttemptSummary, ProgressOut
+from app.modules.learning.schemas import AttemptIn, AttemptResult, AttemptSummary, ProgressOut, RewardsOut
 from app.modules.problem_bank.schemas import PublicProblem
 
 router = APIRouter(tags=["learning"])
@@ -25,6 +25,11 @@ async def submit_attempt(body: AttemptIn, db: Db, user: CurrentUser,
 @router.get("/me/progress", response_model=ProgressOut)
 async def my_progress(db: Db, user: CurrentUser):
     return await service.progress(db, user)
+
+
+@router.get("/me/rewards", response_model=RewardsOut)
+async def my_rewards(db: Db, user: CurrentUser):
+    return await service.rewards_summary(db, user)
 
 
 @router.get("/me/attempts", response_model=list[AttemptSummary])

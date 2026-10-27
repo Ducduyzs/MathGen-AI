@@ -42,6 +42,7 @@ import { handleClassroom, myAssignments } from "./classroom-handlers";
 import { handleFamily } from "./family-handlers";
 import { handleIngestion, handleStorageUpload } from "./ingestion-handlers";
 import { handleProblemSets, setSource } from "./problem-set-handlers";
+import { recordRewards, rewardsOf } from "./rewards-handlers";
 import { THPT_BLUEPRINT } from "./thpt-templates";
 
 export const EXAM_SIZES: Record<ExamMode, number[]> = { choice: [10, 20, 40, 100], written: [5, 10, 20, 40] };
@@ -377,8 +378,8 @@ function submitExam(e: MockExam, answers: Record<string, ExamAnswer>): ExamResul
     sc.score = Math.min(1, Math.max(0, sc.score + 0.05 * ((items[i].is_correct ? 1 : 0) - sc.score)));
     sc.n += 1;
   });
-  const answered = e.questions.filter((q) => answers[q.id]).length;
-  dailyOf(e.user_id).count += answered;
+  const answered = e.questions.flatMap((q, i) => (answers[q.id] ? [items[i].is_correct] : []));
+  recordRewards(e.user_id, answered, "exam", dailyOf(e.user_id), DAILY_GOAL);
   const totals = state().totals.get(e.user_id) ?? { total: 0, correct: 0 };
   state().totals.set(e.user_id, { total: totals.total + e.questions.length, correct: totals.correct + correct });
 
@@ -500,6 +501,7 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
   if (route === "GET /me") return json(toUser(user));
 
   if (route === "GET /me/progress") return json(progressOf(user.id));
+  if (route === "GET /me/rewards") return json(rewardsOf(user.id, dailyOf(user.id), DAILY_GOAL));
 
   if (route === "GET /me/attempts") {
     const limit = Number(url.searchParams.get("limit") ?? 10);
@@ -543,7 +545,7 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
     const delta = 0.12 * ((ok ? 1 : 0) - sc.score) * (ok && b.hints_used > 0 ? 0.5 : 1);
     sc.score = Math.min(1, Math.max(0, sc.score + delta));
     sc.n += 1;
-    dailyOf(user.id).count += 1;
+    const xp = recordRewards(user.id, [ok], "practice", dailyOf(user.id), DAILY_GOAL, b.hints_used);
     const totals = s.totals.get(user.id) ?? { total: 0, correct: 0 };
     s.totals.set(user.id, { total: totals.total + 1, correct: totals.correct + (ok ? 1 : 0) });
 
@@ -553,6 +555,7 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
       correct_answer: p.answer,
       correct_answer_display: p.answer_display,
       solution: p.solution,
+      xp_gained: xp,
     };
     if (key) s.idempotency.set(key, result);
     return json(result);
@@ -605,8 +608,8 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
     templates: (pool) => TEMPLATES.filter((t) => t.type !== "true_false" && (pool === "thpt") === !!t.part),
     generate: generateFrom,
     grade: (q, a) => gradeExamAnswer(q as MockExamQuestion, a),
-    addActivity: (userId, n) => {
-      dailyOf(userId).count += n;
+    addActivity: (userId, results) => {
+      recordRewards(userId, results, "arena", dailyOf(userId), DAILY_GOAL);
     },
   });
   if (arena) return arena;

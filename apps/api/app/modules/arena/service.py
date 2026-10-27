@@ -71,7 +71,7 @@ async def _finalize(db: AsyncSession, run: ArenaRun, now: datetime) -> list[tupl
         return []
     run.finished_at, run.current = min(now, run.ends_at), None
     done = [h for h in run.history if h["given"] is not None]
-    await learning.record_activity(db, run.user_id, len(done))
+    await learning.record_activity(db, run.user_id, [h["is_correct"] for h in done], "arena")
     return [(h["skill_code"], h["is_correct"]) for h in done]
 
 

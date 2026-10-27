@@ -1,13 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { progressKeys } from "@/features/progress";
 import { apiFetch } from "@/lib/api/http";
-import type { ArenaAnswerResult, ArenaBoard, ArenaDuration, ArenaMe, ArenaPool, ArenaRun, ExamAnswer } from "@/types/api";
+import type { ArenaAnswerResult, ArenaBoard, ArenaDuration, ArenaMe, ArenaPool, ArenaRankBoard, ArenaRun, ExamAnswer } from "@/types/api";
 
 export const arenaKeys = {
   all: ["arena"] as const,
   me: ["arena", "me"] as const,
   board: (pool: ArenaPool, duration: ArenaDuration, scope: "week" | "all") => ["arena", "board", pool, duration, scope] as const,
   run: (id: string) => ["arena", "run", id] as const,
+  ranking: ["arena", "ranking"] as const,
 };
 
 const enc = encodeURIComponent;
@@ -21,6 +22,10 @@ export function useArenaBoard(pool: ArenaPool, duration: ArenaDuration, scope: "
     queryKey: arenaKeys.board(pool, duration, scope),
     queryFn: () => apiFetch<ArenaBoard>(`/api/arena/leaderboard?pool=${pool}&duration=${duration}&scope=${scope}`),
   });
+}
+
+export function useRankBoard() {
+  return useQuery({ queryKey: arenaKeys.ranking, queryFn: () => apiFetch<ArenaRankBoard>("/api/arena/ranking") });
 }
 
 export function useArenaRun(id: string) {
@@ -43,6 +48,7 @@ function useRunDone() {
     if (run.finished) {
       void queryClient.invalidateQueries({ queryKey: arenaKeys.me });
       void queryClient.invalidateQueries({ queryKey: ["arena", "board"] });
+      void queryClient.invalidateQueries({ queryKey: arenaKeys.ranking });
       void queryClient.invalidateQueries({ queryKey: progressKeys.all });
     }
   };

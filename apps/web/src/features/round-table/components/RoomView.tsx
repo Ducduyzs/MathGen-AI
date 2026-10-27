@@ -54,12 +54,12 @@ export function RoomView({ code }: { code: string }) {
   );
 
   function exit() {
-    leave.mutate(undefined, { onSettled: () => router.push("/arena/table") });
+    leave.mutate(undefined, { onSettled: () => router.push("/games/round-table") });
   }
 
   function replay() {
     if (!room) return;
-    create.mutate({ pool: room.pool, rounds: room.rounds }, { onSuccess: (r) => router.push(`/arena/table/${r.code}`), onError: (e) => toast.error(errorMessage(e)) });
+    create.mutate({ pool: room.pool, rounds: room.rounds }, { onSuccess: (r) => router.push(`/games/round-table/${r.code}`), onError: (e) => toast.error(errorMessage(e)) });
   }
 
   if (error) {
@@ -67,7 +67,7 @@ export function RoomView({ code }: { code: string }) {
       <div className="mx-auto max-w-md py-16 text-center">
         <p className="text-lg font-semibold text-ink">Không vào được bàn {code.toUpperCase()}</p>
         <p className="mt-1 text-muted">{error instanceof ApiError && error.status === 404 ? "Bàn không tồn tại, đã hết hạn hoặc bạn chưa vào bàn này." : errorMessage(error)}</p>
-        <Link href="/arena/table" className="mt-5 inline-block font-medium text-brand-700 hover:underline">
+        <Link href="/games/round-table" className="mt-5 inline-block font-medium text-brand-700 hover:underline">
           Về sảnh Bàn tròn
         </Link>
       </div>

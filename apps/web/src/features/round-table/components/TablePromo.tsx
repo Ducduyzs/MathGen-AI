@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { ChevronRight, Orbit } from "lucide-react";
 
-/** Lối vào Bàn tròn vũ trụ trên trang Đấu trường. */
+/** Thẻ vào Bàn tròn vũ trụ ở khu Trò chơi. */
 export function TablePromo() {
   return (
     <Link
-      href="/arena/table"
-      className="group relative mb-6 flex items-center gap-4 overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_20%_30%,#4c1d95_0,#0b0622_60%,#03050c_100%)] p-5 text-white shadow-sm"
+      href="/games/round-table"
+      className="group relative flex items-center gap-4 overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_20%_30%,#4c1d95_0,#0b0622_60%,#03050c_100%)] p-5 text-white shadow-sm"
     >
       <span className="absolute inset-0 bg-[radial-gradient(circle,#fff_1px,transparent_1px)] [background-size:26px_26px] opacity-15" aria-hidden />
       <span className="relative grid size-12 shrink-0 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/20">

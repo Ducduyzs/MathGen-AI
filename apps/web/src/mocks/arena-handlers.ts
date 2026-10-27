@@ -1,6 +1,7 @@
 // Mock API cho Đấu trường. Cùng hợp đồng (và cách tính điểm) với module arena của FastAPI.
-import type { ArenaBest, ArenaBoardRow, ArenaItem, ArenaMe, ArenaPool, ArenaRun, ExamAnswer, ExamQuestion } from "@/types/api";
+import type { ArenaBest, ArenaBoardRow, ArenaItem, ArenaRankRow, ArenaMe, ArenaPool, ArenaRun, ExamAnswer, ExamQuestion } from "@/types/api";
 import type { MockUser } from "./data";
+import { describeRank, rankDelta, ratingOf, ratings } from "./arena-ranks";
 import type { ExamSource } from "./handlers";
 
 const DURATIONS = [5, 15, 30];
@@ -24,6 +25,7 @@ interface MockRun {
   best_combo: number;
   current: Current | null;
   history: (ArenaItem & { skill: string })[];
+  rank_delta?: number | null;
 }
 
 interface Ctx {
@@ -67,6 +69,12 @@ function finalize(ctx: Ctx, r: MockRun) {
   r.finished_at = new Date(Math.min(Date.now(), new Date(r.ends_at).getTime())).toISOString();
   r.current = null;
   ctx.addActivity(r.user_id, r.history.filter((h) => h.given).map((h) => h.is_correct));
+  const rating = ratingOf(r.user_id);
+  const delta = rankDelta(rating.points, r.score, r.answered, r.duration_minutes);
+  if (delta === null) return;
+  const after = Math.max(0, rating.points + delta);
+  r.rank_delta = after - rating.points;
+  ratings().set(r.user_id, { points: after, ranked_runs: rating.ranked_runs + 1 });
 }
 
 function bestPerUser(pool: ArenaPool, duration: number, since: string | null) {
@@ -112,6 +120,13 @@ function out(r: MockRun): ArenaRun {
         .map((x) => x.score),
     );
     run.personal_best = r.score > previous;
+    const latest = [...runs().values()]
+      .filter((x) => x.user_id === r.user_id && x.rank_delta != null)
+      .sort((a, b) => b.finished_at!.localeCompare(a.finished_at!))[0];
+    if (r.rank_delta != null && latest?.id === r.id) {
+      const now = ratingOf(r.user_id);
+      run.rank_change = { delta: r.rank_delta, before: describeRank(now.points - r.rank_delta), after: describeRank(now.points, now.ranked_runs) };
+    }
   }
   return run;
 }
@@ -131,7 +146,26 @@ export function handleArena(req: Request, path: string[], body: Record<string, u
       .slice(0, 8)
       .map((r) => ({ id: r.id, pool: r.pool, duration_minutes: r.duration_minutes, score: r.score, correct: r.correct, answered: r.answered, finished_at: r.finished_at! }));
     const active = mine.find((r) => !r.finished_at && new Date(r.ends_at).getTime() > Date.now());
-    return json({ best: arenaBest(user.id), recent, active_run_id: active?.id ?? null } satisfies ArenaMe);
+    const rating = ratingOf(user.id);
+    return json({ rank: describeRank(rating.points, rating.ranked_runs), best: arenaBest(user.id), recent, active_run_id: active?.id ?? null } satisfies ArenaMe);
+  }
+
+  if (p1 === "ranking" && m === "GET") {
+    const ranked = [...ratings().entries()].filter(([, r]) => r.ranked_runs > 0).sort((a, b) => b[1].points - a[1].points);
+    const row = ([id, r]: [string, { points: number; ranked_runs: number }]): ArenaRankRow => {
+      const u = ctx.users.find((x) => x.id === id);
+      return {
+        rank: 1 + ranked.filter(([, x]) => x.points > r.points).length,
+        user_id: id,
+        full_name: u?.full_name ?? "",
+        grade: u?.grade ?? null,
+        rating: describeRank(r.points, r.ranked_runs),
+        is_me: id === user.id,
+      };
+    };
+    const rows = ranked.slice(0, BOARD_SIZE).map(row);
+    const mine = ranked.find(([id]) => id === user.id);
+    return json({ rows, me: mine && !rows.some((r) => r.is_me) ? row(mine) : null });
   }
 
   if (p1 === "leaderboard" && m === "GET") {

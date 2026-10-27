@@ -272,7 +272,7 @@ export function FinishPanel({ room, onReplay, replaying }: { room: TableRoom; on
         <Button className="flex-1" onClick={onReplay} loading={replaying}>
           <RotateCcw className="size-4" aria-hidden /> Ván mới
         </Button>
-        <Link href="/arena/table" className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-white/10 px-4 text-[15px] font-medium hover:bg-white/20">
+        <Link href="/games/round-table" className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-white/10 px-4 text-[15px] font-medium hover:bg-white/20">
           <Users className="size-4" aria-hidden /> Về sảnh
         </Link>
       </div>

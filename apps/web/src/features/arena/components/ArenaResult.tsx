@@ -12,6 +12,7 @@ import { errorMessage } from "@/lib/api/errors";
 import { percent } from "@/lib/utils";
 import type { ArenaItem, ArenaRun } from "@/types/api";
 import { useStartRun } from "../api";
+import { RankChangeBadge } from "./Rank";
 import { POOL_LABEL } from "../model";
 
 function given(item: ArenaItem) {
@@ -56,6 +57,7 @@ export function ArenaResult({ run }: { run: ArenaRun }) {
             </Badge>
           )}
         </div>
+        {run.rank_change && <RankChangeBadge change={run.rank_change} />}
         <dl className="mx-auto mt-6 grid max-w-md grid-cols-3 gap-3 text-sm">
           <div>
             <dt className="text-muted">Đúng</dt>

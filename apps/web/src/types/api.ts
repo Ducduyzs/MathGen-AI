@@ -577,6 +577,41 @@ export interface ArenaRun {
   history?: ArenaItem[];
   week_rank?: number;
   personal_best?: boolean;
+  /** Thay đổi rank của lượt vừa xong (lượt dưới 3 câu không tính). */
+  rank_change?: ArenaRankChange;
+}
+
+export type RankTier = "bronze" | "silver" | "gold" | "platinum" | "diamond" | "master";
+
+export interface ArenaRank {
+  points: number;
+  tier: RankTier;
+  tier_name: string;
+  division: "III" | "II" | "I" | null;
+  label: string;
+  floor: number;
+  next_at: number | null;
+  ranked_runs: number;
+}
+
+export interface ArenaRankChange {
+  delta: number;
+  before: ArenaRank;
+  after: ArenaRank;
+}
+
+export interface ArenaRankRow {
+  rank: number;
+  user_id: string;
+  full_name: string;
+  grade: number | null;
+  rating: ArenaRank;
+  is_me: boolean;
+}
+
+export interface ArenaRankBoard {
+  rows: ArenaRankRow[];
+  me: ArenaRankRow | null;
 }
 
 export interface ArenaAnswerResult {
@@ -611,6 +646,7 @@ export interface ArenaBest {
 }
 
 export interface ArenaMe {
+  rank: ArenaRank;
   best: ArenaBest[];
   recent: { id: string; pool: ArenaPool; duration_minutes: ArenaDuration; score: number; correct: number; answered: number; finished_at: string }[];
   active_run_id: string | null;

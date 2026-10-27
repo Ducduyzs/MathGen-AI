@@ -39,7 +39,7 @@ const ACTIONS: Partial<Record<Role, Omit<Entry, "group">[]>> = {
   student: [
     { id: "a:thpt", label: "Làm đề thi tốt nghiệp THPT", icon: GraduationCap, href: "/exams", keywords: "de thi thpt quoc gia" },
     { id: "a:arena", label: "Vào Đấu trường", hint: "5 · 15 · 30 phút", icon: Swords, href: "/arena", keywords: "thi dau xep hang" },
-    { id: "a:table", label: "Bàn tròn vũ trụ", hint: "4 người · 3D", icon: Orbit, href: "/arena/table", keywords: "ho den choi cung ban 3d game" },
+    { id: "a:table", label: "Bàn tròn vũ trụ", hint: "4 người · 3D", icon: Orbit, href: "/games/round-table", keywords: "ho den choi cung ban 3d game" },
     { id: "a:daily", label: "Luyện tập theo hồ sơ năng lực", icon: Sparkles, href: "/practice", keywords: "lam bai goi y" },
   ],
   teacher: [{ id: "a:set", label: "Soạn bộ đề mới", icon: FileStack, href: "/teacher/problem-sets", keywords: "tao de kiem tra" }],

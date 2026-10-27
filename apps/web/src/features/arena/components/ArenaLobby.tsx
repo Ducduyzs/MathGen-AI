@@ -16,6 +16,7 @@ import { cn, timeAgo } from "@/lib/utils";
 import type { ArenaDuration, ArenaPool } from "@/types/api";
 import { useArenaBoard, useArenaMe, useStartRun } from "../api";
 import { ARENA_DURATIONS, defaultPool, POOL_LABEL, POOLS } from "../model";
+import { RankBoard, RankCard } from "./Rank";
 
 const MEDAL = ["text-amber-500", "text-slate-400", "text-orange-600"];
 
@@ -28,7 +29,7 @@ function Board({ pool, duration }: { pool: ArenaPool; duration: ArenaDuration })
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center gap-2 border-b border-line p-4">
         <CardTitle className="mr-auto flex items-center gap-2">
-          <Trophy className="size-4.5 text-brand-500" aria-hidden /> Bảng xếp hạng
+          <Medal className="size-4.5 text-brand-500" aria-hidden /> Bảng điểm cao
         </CardTitle>
         <Chip size="sm" selected={scope === "week"} onClick={() => setScope("week")}>
           Tuần này
@@ -90,6 +91,7 @@ export function ArenaLobby() {
 
   return (
     <div className="space-y-5">
+      {me.data ? <RankCard rank={me.data.rank} /> : <Skeleton className="h-28 rounded-2xl" />}
       {me.data?.active_run_id && (
         <Link
           href={`/arena/${me.data.active_run_id}`}
@@ -176,7 +178,10 @@ export function ArenaLobby() {
         </Card>
       </div>
 
-      <Board pool={pool} duration={duration} />
+      <div className="grid items-start gap-5 lg:grid-cols-2">
+        <RankBoard />
+        <Board pool={pool} duration={duration} />
+      </div>
       <p className="text-center text-xs text-muted">
         Muốn luyện kỹ từng dạng?{" "}
         <Link href="/practice" className={buttonClasses({ variant: "ghost", size: "sm", className: "h-auto px-1 py-0" })}>

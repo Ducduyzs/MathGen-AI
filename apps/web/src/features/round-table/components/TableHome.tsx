@@ -30,13 +30,13 @@ export function TableHome() {
   const [code, setCode] = useState("");
 
   function onCreate() {
-    create.mutate({ pool, rounds }, { onSuccess: (r) => router.push(`/arena/table/${r.code}`), onError: (e) => toast.error(errorMessage(e)) });
+    create.mutate({ pool, rounds }, { onSuccess: (r) => router.push(`/games/round-table/${r.code}`), onError: (e) => toast.error(errorMessage(e)) });
   }
 
   function onJoin(e: FormEvent) {
     e.preventDefault();
     if (code.trim().length < 5) return;
-    join.mutate(code, { onSuccess: (r) => router.push(`/arena/table/${r.code}`), onError: (err) => toast.error(errorMessage(err)) });
+    join.mutate(code, { onSuccess: (r) => router.push(`/games/round-table/${r.code}`), onError: (err) => toast.error(errorMessage(err)) });
   }
 
   return (

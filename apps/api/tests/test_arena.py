@@ -104,3 +104,39 @@ async def test_bat_dau_luot_moi_ket_thuc_luot_cu_va_bang_xep_hang(client):
     assert rows["An Bình"]["score"] == first["score"]
     assert sum(r["full_name"] == "An Bình" for r in board["rows"]) == 1
     assert (await client.get("/api/arena/leaderboard?duration=7", headers=a)).status_code == 422
+
+
+def test_bac_rank_va_diem_cong_tru():
+    from app.modules.arena.ranks import describe, rank_delta
+
+    assert describe(0).label == "Đồng III" and describe(0).next_at == 133
+    assert describe(450).label == "Bạc III" and describe(899).label == "Bạc I" and describe(899).next_at == 900
+    assert describe(3500).label == "Cao thủ" and describe(3500).next_at is None
+    assert rank_delta(0, 500, 2, 5) is None  # dưới 3 câu: không tính rank
+    assert rank_delta(0, 300, 10, 5) == 40  # 60 điểm/phút ở bậc Đồng: tăng tối đa
+    assert rank_delta(3000, 100, 5, 5) == -25  # Cao thủ chơi kém: trừ tối đa
+    assert rank_delta(0, 900, 30, 30) > rank_delta(0, 150, 10, 5) > 0  # cùng 30 điểm/phút: lượt dài nặng hơn
+
+
+async def test_luot_tinh_rank_va_bang_rank(client):
+    h = await new_student(client, "Leo Rank")
+    me0 = (await client.get("/api/arena/me", headers=h)).json()
+    assert me0["rank"]["label"] == "Đồng III" and me0["rank"]["points"] == 0 and me0["rank"]["ranked_runs"] == 0
+
+    run = (await client.post("/api/arena/runs", json={"pool": "basic", "duration_minutes": 5}, headers=h)).json()
+    run = await play(client, h, run, [True, True, True, True])
+    done = (await client.post(f"/api/arena/runs/{run['id']}/finish", headers=h)).json()
+    change = done["rank_change"]
+    assert change["before"]["points"] == 0 and change["after"]["points"] == max(0, change["delta"]) and change["after"]["ranked_runs"] == 1
+
+    me = (await client.get("/api/arena/me", headers=h)).json()
+    assert me["rank"]["points"] == change["after"]["points"]
+    board = (await client.get("/api/arena/ranking", headers=h)).json()
+    mine = next((r for r in board["rows"] if r["is_me"]), board["me"])
+    assert mine and mine["rating"]["points"] == me["rank"]["points"] and mine["rank"] >= 1
+
+    # Lượt quá ít câu: không đổi rank
+    short = (await client.post("/api/arena/runs", json={"pool": "basic", "duration_minutes": 5}, headers=h)).json()
+    short = await play(client, h, short, [True])
+    assert "rank_change" not in (await client.post(f"/api/arena/runs/{short['id']}/finish", headers=h)).json()
+    assert (await client.get("/api/arena/me", headers=h)).json()["rank"]["points"] == me["rank"]["points"]

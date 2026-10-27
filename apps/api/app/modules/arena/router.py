@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from app.core.deps import CurrentUser, Db
 from app.core.errors import ApiError
 from app.modules.arena import service
-from app.modules.arena.schemas import ARENA_DURATIONS, AnswerIn, AnswerOut, ArenaMeOut, ArenaPool, BoardOut, RunOut, StartRunIn
+from app.modules.arena.schemas import ARENA_DURATIONS, AnswerIn, AnswerOut, ArenaMeOut, ArenaPool, BoardOut, RankBoardOut, RunOut, StartRunIn
 
 router = APIRouter(prefix="/arena", tags=["arena"])
 
@@ -21,6 +21,11 @@ async def arena_leaderboard(db: Db, user: CurrentUser, pool: ArenaPool = "basic"
     if duration not in ARENA_DURATIONS:  # Literal số nguyên không nhận chuỗi "30" của query string
         raise ApiError(422, "validation_error")
     return await service.leaderboard(db, user, pool, duration, scope)
+
+
+@router.get("/ranking", response_model=RankBoardOut)
+async def arena_ranking(db: Db, user: CurrentUser):
+    return await service.rank_board(db, user)
 
 
 @router.post("/runs", response_model=RunOut, status_code=201, response_model_exclude_none=True)

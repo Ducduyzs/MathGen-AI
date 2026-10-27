@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -31,3 +31,17 @@ class ArenaRun(Timestamped, Base):
     best_combo: Mapped[int] = mapped_column(Integer, default=0)
     current: Mapped[dict | None] = mapped_column(JSONB)
     history: Mapped[list] = mapped_column(JSONB, default=list)
+    # Điểm rank cộng/trừ khi kết thúc (None: lượt quá ít câu, không tính rank)
+    rank_delta: Mapped[int | None] = mapped_column(Integer)
+
+
+class ArenaRating(Base):
+    """Điểm rank Đấu trường của một học sinh (một bảng rank chung cho mọi bộ câu hỏi và thời lượng)."""
+
+    __tablename__ = "arena_ratings"
+
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    points: Mapped[int] = mapped_column(Integer, default=0, index=True)
+    peak: Mapped[int] = mapped_column(Integer, default=0)
+    ranked_runs: Mapped[int] = mapped_column(Integer, default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

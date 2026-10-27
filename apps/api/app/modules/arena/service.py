@@ -10,14 +10,16 @@ import secrets
 from datetime import UTC, datetime, time, timedelta
 
 from sqlalchemy import func, select
-from sqlalchemy.dialects.postgresql import distinct_on
+from sqlalchemy.dialects.postgresql import distinct_on, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import ApiError
 from app.core.ids import new_id
-from app.modules.arena.models import ArenaRun
+from app.modules.arena import ranks
+from app.modules.arena.models import ArenaRating, ArenaRun
 from app.modules.arena.schemas import (
-    AnswerIn, AnswerOut, ArenaItem, ArenaMeOut, BestOut, BoardOut, BoardRow, RunOut, RunSummary, StartRunIn,
+    AnswerIn, AnswerOut, ArenaItem, ArenaMeOut, BestOut, BoardOut, BoardRow, RankBoardOut, RankChange, RankRow, RunOut, RunSummary,
+    StartRunIn,
 )
 from app.modules.exams import service as exams
 from app.modules.exams.schemas import ExamQuestionOut, TemplateRef
@@ -71,8 +73,29 @@ async def _finalize(db: AsyncSession, run: ArenaRun, now: datetime) -> list[tupl
         return []
     run.finished_at, run.current = min(now, run.ends_at), None
     done = [h for h in run.history if h["given"] is not None]
+    await _apply_rank(db, run)
     await learning.record_activity(db, run.user_id, [h["is_correct"] for h in done], "arena")
     return [(h["skill_code"], h["is_correct"]) for h in done]
+
+
+async def _rating(db: AsyncSession, user_id: str, lock: bool = False) -> ArenaRating | None:
+    if not lock:
+        return await db.get(ArenaRating, user_id)
+    # Tạo nếu chưa có và khóa dòng trong một lượt gọi DB
+    stmt = insert(ArenaRating).values(user_id=user_id, points=0, peak=0, ranked_runs=0)
+    stmt = stmt.on_conflict_do_update(index_elements=["user_id"], set_={"user_id": stmt.excluded.user_id}).returning(ArenaRating)
+    return await db.scalar(select(ArenaRating).from_statement(stmt).execution_options(populate_existing=True))
+
+
+async def _apply_rank(db: AsyncSession, run: ArenaRun) -> None:
+    """Cộng/trừ điểm rank một lần khi lượt kết thúc."""
+    rating = await _rating(db, run.user_id, lock=True)
+    delta = ranks.rank_delta(rating.points, run.score, run.answered, run.duration_minutes)
+    if delta is None:
+        return
+    after = max(0, rating.points + delta)
+    run.rank_delta = after - rating.points
+    rating.points, rating.peak, rating.ranked_runs = after, max(rating.peak, after), rating.ranked_runs + 1
 
 
 async def _commit(db: AsyncSession, user_id: str, outcomes: list[tuple[str, bool]]) -> None:
@@ -118,6 +141,14 @@ async def _out(db: AsyncSession, run: ArenaRun) -> RunOut:
             ArenaRun.user_id == run.user_id, ArenaRun.pool == run.pool, ArenaRun.duration_minutes == run.duration_minutes,
             ArenaRun.finished_at.is_not(None), ArenaRun.id != run.id))
         out.personal_best = run.score > (previous or 0)
+        if run.rank_delta is not None:
+            # Lượt cũ: tính lại "trước" từ điểm hiện tại chỉ đúng với lượt gần nhất, nên chỉ trả cho lượt vừa xong
+            rating = await _rating(db, run.user_id)
+            latest = await db.scalar(select(ArenaRun.id).where(ArenaRun.user_id == run.user_id, ArenaRun.rank_delta.is_not(None))
+                                     .order_by(ArenaRun.finished_at.desc()).limit(1))
+            if rating and latest == run.id:
+                out.rank_change = RankChange(delta=run.rank_delta, before=ranks.describe(rating.points - run.rank_delta),
+                                             after=ranks.describe(rating.points, rating.ranked_runs))
     return out
 
 
@@ -213,9 +244,32 @@ async def me(db: AsyncSession, user: User) -> ArenaMeOut:
     recent = await db.scalars(select(ArenaRun).where(*finished).order_by(ArenaRun.finished_at.desc()).limit(RECENT))
     active = await db.scalar(select(ArenaRun.id).where(ArenaRun.user_id == user.id, ArenaRun.finished_at.is_(None),
                                                        ArenaRun.ends_at > datetime.now(UTC)).order_by(ArenaRun.created_at.desc()))
+    rating = await _rating(db, user.id)
     return ArenaMeOut(
+        rank=ranks.describe(rating.points, rating.ranked_runs) if rating else ranks.describe(0),
         best=[BestOut(pool=p, duration_minutes=d, score=s) for p, d, s in best],
         recent=[RunSummary(id=r.id, pool=r.pool, duration_minutes=r.duration_minutes, score=r.score, correct=r.correct,
                            answered=r.answered, finished_at=r.finished_at) for r in recent],
         active_run_id=active,
     )
+
+
+async def rank_board(db: AsyncSession, user: User) -> RankBoardOut:
+    """Bảng rank: người có ít nhất một lượt tính rank, điểm cao trước (bằng điểm thì cùng hạng)."""
+    rows = (await db.execute(
+        select(ArenaRating, User.full_name, User.grade).join(User, User.id == ArenaRating.user_id)
+        .where(ArenaRating.ranked_runs > 0).order_by(ArenaRating.points.desc(), ArenaRating.updated_at).limit(BOARD_SIZE)
+    )).all()
+    out, rank, prev = [], 0, None
+    for i, (r, name, grade) in enumerate(rows, start=1):
+        if r.points != prev:
+            rank, prev = i, r.points
+        out.append(RankRow(rank=rank, user_id=r.user_id, full_name=name, grade=grade, rating=ranks.describe(r.points, r.ranked_runs),
+                           is_me=r.user_id == user.id))
+    me = None
+    mine = await _rating(db, user.id)
+    if mine and mine.ranked_runs and not any(r.is_me for r in out):
+        above = await db.scalar(select(func.count()).select_from(ArenaRating).where(ArenaRating.ranked_runs > 0, ArenaRating.points > mine.points))
+        me = RankRow(rank=above + 1, user_id=user.id, full_name=user.full_name, grade=user.grade,
+                     rating=ranks.describe(mine.points, mine.ranked_runs), is_me=True)
+    return RankBoardOut(rows=out, me=me)

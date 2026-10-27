@@ -31,6 +31,24 @@ class ArenaItem(BaseModel):
     answer_display: str
 
 
+class RankOut(BaseModel):
+    points: int
+    tier: str  # bronze | silver | gold | platinum | diamond | master
+    tier_name: str
+    division: str | None  # III | II | I (Cao thủ không chia hạng)
+    label: str
+    floor: int
+    # Điểm cần để lên hạng/bậc kế tiếp (Cao thủ: không có)
+    next_at: int | None
+    ranked_runs: int
+
+
+class RankChange(BaseModel):
+    delta: int
+    before: RankOut
+    after: RankOut
+
+
 class RunOut(BaseModel):
     id: str
     pool: ArenaPool
@@ -49,6 +67,8 @@ class RunOut(BaseModel):
     history: list[ArenaItem] | None = None
     week_rank: int | None = None
     personal_best: bool | None = None
+    # Thay đổi rank của lượt này (lượt quá ít câu thì không tính)
+    rank_change: RankChange | None = None
 
 
 class AnswerOut(BaseModel):
@@ -92,7 +112,22 @@ class RunSummary(BaseModel):
     finished_at: datetime
 
 
+class RankRow(BaseModel):
+    rank: int
+    user_id: str
+    full_name: str
+    grade: int | None
+    rating: RankOut
+    is_me: bool
+
+
+class RankBoardOut(BaseModel):
+    rows: list[RankRow]
+    me: RankRow | None
+
+
 class ArenaMeOut(BaseModel):
+    rank: RankOut
     best: list[BestOut]
     recent: list[RunSummary]
     # Lượt chưa hết giờ (mở lại khi tải lại trang)

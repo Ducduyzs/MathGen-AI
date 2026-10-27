@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from datetime import UTC, date, datetime, timedelta, timezone
 
 from redis.asyncio import Redis
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -171,3 +171,22 @@ async def recent_attempts(db: AsyncSession, user: User, limit: int) -> list[Atte
                        is_correct=a.is_correct, created_at=a.created_at.astimezone(UTC))
         for a, p in rows.all()
     ]
+
+
+async def attempt_stats(db: AsyncSession, days: int = 7) -> dict:
+    since = datetime.now(UTC) - timedelta(days=days)
+    total, correct, students = (await db.execute(
+        select(func.count(), func.count().filter(Attempt.is_correct.is_(True)), func.count(func.distinct(Attempt.user_id)))
+        .where(Attempt.created_at >= since)
+    )).one()
+    return {"attempts": total, "correct_rate": correct / total if total else None, "active_students": students}
+
+
+async def suspicious_problems(db: AsyncSession, min_attempts: int = 5, max_rate: float = 0.25, limit: int = 10) -> list[dict]:
+    """Bài nhiều lượt làm mà rất ít người đúng: dễ là đáp án sai, đề lỗi hoặc gắn sai độ khó."""
+    rate = func.avg(case((Attempt.is_correct.is_(True), 1.0), else_=0.0))
+    rows = (await db.execute(
+        select(Attempt.problem_id, func.count(), rate).group_by(Attempt.problem_id)
+        .having(func.count() >= min_attempts, rate <= max_rate).order_by(rate, func.count().desc()).limit(limit)
+    )).all()
+    return [{"problem_id": pid, "attempts": n, "correct_rate": float(r)} for pid, n, r in rows]

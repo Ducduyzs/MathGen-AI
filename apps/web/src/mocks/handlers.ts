@@ -646,6 +646,17 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
   });
   if (ingestion) return ingestion;
 
+  // ---- Quản trị: danh sách người dùng mock (chỉ xem); sửa và báo cáo chất lượng cần backend thật
+  if (path[0] === "admin") {
+    if (user.role !== "admin") return fail(403, "forbidden");
+    if (req.method === "GET" && path[1] === "users") {
+      const items = s.users.map((u) => ({ ...toUser(u), created_at: new Date().toISOString(), disabled: false, last_login: null }));
+      const counts = Object.fromEntries(["student", "teacher", "admin", "parent"].map((r) => [r, s.users.filter((u) => u.role === r).length]));
+      return json({ items, total: items.length, page: 1, page_size: 50, counts, disabled: 0 });
+    }
+    return fail(501, "mock_unsupported");
+  }
+
   // ---- Bộ gom: cần backend thật (tải trang web, robots.txt, worker); mock chỉ trả danh sách rỗng
   if (path[0] === "crawler") {
     if (user.role !== "admin") return fail(403, "forbidden");

@@ -13,8 +13,10 @@ from app.modules.ingestion.router import router as ingestion
 from app.modules.learning.router import router as learning
 from app.modules.problem_bank.router import router as problem_bank
 from app.modules.problem_sets.router import router as problem_sets
+from app.modules.quality.router import router as quality
 from app.modules.regions.router import router as regions
 from app.modules.round_table.router import router as round_table
+from app.modules.users.admin_router import router as admin_users
 from app.modules.users.router import router as users
 
 
@@ -23,7 +25,7 @@ def create_app() -> FastAPI:
     install_handlers(app)
 
     api = APIRouter(prefix="/api")
-    for r in (users, problem_bank, learning, exams, ingestion, classroom, problem_sets, arena, family, round_table, crawler, regions):
+    for r in (users, problem_bank, learning, exams, ingestion, classroom, problem_sets, arena, family, round_table, crawler, regions, admin_users, quality):
         api.include_router(r)
 
     @api.get("/health", tags=["ops"])

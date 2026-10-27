@@ -895,3 +895,74 @@ export interface CrawlJob extends CrawlJobSummary {
   source_id: string;
   pages: CrawlPageResult[];
 }
+
+// ---- Quản trị: người dùng và chất lượng nội dung
+
+export interface AdminUser extends User {
+  created_at: string;
+  disabled: boolean;
+  last_login: string | null;
+}
+
+export interface UserPage {
+  items: AdminUser[];
+  total: number;
+  page: number;
+  page_size: number;
+  counts: Partial<Record<Role, number>>;
+  disabled: number;
+}
+
+export interface AdminCreateUserRequest {
+  full_name: string;
+  email: string;
+  role: Role;
+  grade?: number | null;
+  province_code?: string | null;
+  password: string;
+}
+
+export interface AdminUpdateUserRequest {
+  full_name?: string;
+  role?: Role;
+  grade?: number | null;
+  province_code?: string | null;
+  disabled?: boolean;
+}
+
+export interface QualityCount {
+  key: string;
+  label: string;
+  count: number;
+}
+
+export interface QualityReport {
+  problems_total: number;
+  by_origin: QualityCount[];
+  by_stage: QualityCount[];
+  coverage: { code: string; name: string; grade_min: number | null; grade_max: number | null; problems: number; low: boolean }[];
+  min_per_skill: number;
+  by_province: QualityCount[];
+  pending: number;
+  pending_by_origin: QualityCount[];
+  approved_recent: number;
+  rejected_recent: number;
+  approval_rate: number | null;
+  reject_reasons: { reason: string; count: number }[];
+  attempts_week: number;
+  correct_rate_week: number | null;
+  active_students_week: number;
+  suspicious: { problem_id: string; statement: string; skill: string; grade: number; origin: string; attempts: number; correct_rate: number }[];
+  documents: number;
+  documents_failed: number;
+  items: number;
+  recognized: number;
+  duplicates: number;
+  recognition_rate: number | null;
+  documents_with_region: number;
+  crawl_sources: number;
+  crawl_active_sources: number;
+  crawl_jobs: number;
+  crawl_submitted: number;
+  crawl_pages: QualityCount[];
+}

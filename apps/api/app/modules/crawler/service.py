@@ -3,7 +3,7 @@
 import asyncio
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import ApiError
@@ -142,3 +142,12 @@ async def get_job(db: AsyncSession, job_id: str) -> JobOut:
         PageOut(url=p.url, status=p.status, http_status=p.http_status, title=p.title, questions=p.questions, submitted=p.submitted,
                 ingestion_source_id=p.ingestion_source_id, error=p.error, fetched_at=p.fetched_at, region=(p.extra or {}).get("region"))
         for p in pages])
+
+
+
+async def quality_stats(db: AsyncSession) -> dict:
+    sources = dict((await db.execute(select(CrawlSource.status, func.count()).group_by(CrawlSource.status))).all())
+    pages = dict((await db.execute(select(CrawlPage.status, func.count()).group_by(CrawlPage.status))).all())
+    jobs, submitted = (await db.execute(select(func.count(), func.coalesce(func.sum(CrawlJob.submitted), 0)))).one()
+    return {"sources": sum(sources.values()), "active_sources": sources.get("active", 0), "jobs": jobs, "submitted": int(submitted),
+            "pages": pages}

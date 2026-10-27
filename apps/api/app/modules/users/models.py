@@ -19,6 +19,8 @@ class User(Timestamped, Base):
     grade: Mapped[int | None] = mapped_column(Integer)
     # Tỉnh/thành (đơn vị hành chính mới): gợi ý đề theo khu vực
     province_code: Mapped[str | None] = mapped_column(String(32))
+    # Quản trị viên khóa tài khoản: không đăng nhập / làm mới phiên được, mọi request bị từ chối
+    disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class RefreshToken(Timestamped, Base):

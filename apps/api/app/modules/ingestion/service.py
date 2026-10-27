@@ -227,3 +227,16 @@ def ingest_crawled_sync(db: Session, user_id: str, name: str, text: str, provena
     bank.add_review_items_sync(db, rows)
     db.commit()
     return src.id, len(src.items), len(rows), region
+
+
+
+async def quality_stats(db: AsyncSession, recent: int = 300) -> dict:
+    """Tỉ lệ tách / nhận dạng câu của các tài liệu gần đây (tải lên và bộ gom)."""
+    rows = list(await db.scalars(select(IngestionSource).order_by(IngestionSource.created_at.desc()).limit(recent)))
+    done = [s for s in rows if s.status == "done"]
+    items = [i for s in done for i in s.items]
+    return {
+        "documents": len(rows), "failed": sum(s.status == "failed" for s in rows), "items": len(items),
+        "recognized": sum(i["status"] == "recognized" for i in items), "duplicates": sum(bool(i["duplicate_of"]) for i in items),
+        "with_region": sum(bool((s.region or {}).get("province_code")) for s in done),
+    }

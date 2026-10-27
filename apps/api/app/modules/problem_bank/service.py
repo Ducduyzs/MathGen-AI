@@ -2,7 +2,7 @@
 
 import random
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -193,3 +193,32 @@ def skill_names_sync(db: Session) -> dict[str, str]:
 
 async def count_pending(db: AsyncSession) -> int:
     return int(await db.scalar(select(func.count()).select_from(ReviewItem).where(ReviewItem.status == "pending")) or 0)
+
+
+async def quality_stats(db: AsyncSession, days: int = 30) -> dict:
+    """Số liệu chất lượng ngân hàng: số bài theo nguồn gốc / kỹ năng / tỉnh và kết quả duyệt gần đây."""
+    approved = Problem.status == "approved"
+    by_origin = dict((await db.execute(select(Problem.origin, func.count()).where(approved).group_by(Problem.origin))).all())
+    by_skill = dict((await db.execute(select(Problem.skill_code, func.count()).where(approved).group_by(Problem.skill_code))).all())
+    by_province = dict((await db.execute(select(Problem.province_code, func.count()).where(approved, Problem.province_code.is_not(None))
+                                         .group_by(Problem.province_code))).all())
+    since = datetime.now(UTC) - timedelta(days=days)
+    decided = dict((await db.execute(select(ReviewItem.status, func.count()).where(ReviewItem.decided_at >= since)
+                                     .group_by(ReviewItem.status))).all())
+    reasons = (await db.execute(select(ReviewItem.reason, func.count()).where(ReviewItem.status == "rejected", ReviewItem.decided_at >= since,
+                                                                              ReviewItem.reason.is_not(None))
+                                .group_by(ReviewItem.reason).order_by(func.count().desc()).limit(5))).all()
+    pending_by_origin = dict((await db.execute(select(ReviewItem.origin, func.count()).where(ReviewItem.status == "pending")
+                                               .group_by(ReviewItem.origin))).all())
+    return {
+        "total": sum(by_origin.values()), "by_origin": by_origin, "by_skill": by_skill, "by_province": by_province,
+        "pending": sum(pending_by_origin.values()), "pending_by_origin": pending_by_origin,
+        "approved_recent": decided.get("approved", 0), "rejected_recent": decided.get("rejected", 0),
+        "reject_reasons": [{"reason": r, "count": n} for r, n in reasons],
+    }
+
+
+async def problems_by_ids(db: AsyncSession, ids: list[str]) -> dict[str, Problem]:
+    if not ids:
+        return {}
+    return {p.id: p for p in await db.scalars(select(Problem).where(Problem.id.in_(ids)))}

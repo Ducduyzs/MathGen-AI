@@ -58,6 +58,7 @@ app/
 │   ├── arena/          Đấu trường: làm đề tính giờ 5/15/30 phút, rank Đồng → Cao thủ, bảng điểm cao tuần
 │   ├── crawler/        bộ gom đề từ nguồn được phép: robots.txt, phạm vi tên miền/thư mục, đưa vào pipeline tải đề → hàng chờ duyệt
 │   ├── regions/        34 tỉnh/thành mới (+ tên tỉnh cũ), trường học; nhận diện tỉnh/trường/kỳ thi/năm học từ phần đầu đề
+│   ├── quality/        bảng chất lượng nội dung (quản trị): độ phủ kỹ năng, duyệt bài, bài nghi sai đáp án, pipeline, bộ gom
 │   ├── round_table/    Bàn tròn vũ trụ: 4 người một bàn (ghế trống có máy), sai thì quay vòng hố đen, trạng thái trong Redis
 │   ├── family/         phụ huynh: mã liên kết (một lần, 24 giờ), xem tiến độ / bài lớp giao / đề đã làm của con
 │   └── ingestion/      tải đề (link ký sẵn), pipeline 5 bước trong worker, sinh biến thể có kiểm chứng
@@ -105,6 +106,9 @@ tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, 
   mặc định của nguồn, tạo trường trong danh mục và ghi vào `source` của bài chờ duyệt → khi duyệt, `problems.province_code / school_id /
   exam_kind / exam_year`. Đề theo khu vực (`POST /api/exams` với `province`, `school_id`): câu thật cùng trường trước, rồi cùng tỉnh,
   lớp gần lớp học sinh; thiếu thì bổ sung câu tự sinh cùng cấp học.
+- **Khóa tài khoản** (`users.disabled_at`): chặn ở đăng nhập, làm mới phiên và mọi request (`current_user`); khóa hoặc đặt lại mật khẩu
+  thì thu hồi mọi refresh token. Quản trị viên không tự đổi vai trò / tự khóa được và luôn còn ít nhất một quản trị viên hoạt động.
+- **Bài nghi sai đáp án** (`learning.suspicious_problems`): từ 5 lượt làm mà tỉ lệ đúng ≤ 25%.
 - **Rank Đấu trường** (`arena/ranks.py`): một bảng rank chung; lượt từ 3 câu được cộng/trừ theo điểm/phút so với mức
   chuẩn của bậc hiện tại (lượt dài tính nặng hơn), ghi `arena_runs.rank_delta` một lần khi lượt kết thúc.
 - **Bàn tròn vũ trụ:** trạng thái phòng là JSON trong Redis (TTL 3 giờ), mọi thay đổi chạy dưới khóa Redis của phòng.
@@ -128,6 +132,7 @@ tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, 
 | M3.10 | Mở rộng lớp 1–5: 8 kỹ năng, 20 dạng bài, kho Đấu trường / Bàn tròn "Tiểu học" | ✅ |
 | M3.11 | Bộ gom đề từ nguồn được phép (`/api/crawler`, trang quản trị Nguồn dữ liệu) | ✅ |
 | M3.12 | Khu vực: tỉnh/trường cho đề thu thập, đề theo khu vực, lọc ngân hàng theo tỉnh (`/api/regions`) | ✅ |
+| M3.13 | Quản trị: người dùng (`/api/admin/users`: tạo, đổi vai trò, khóa, đặt lại mật khẩu) và chất lượng (`/api/admin/quality`) | ✅ |
 | M4 | OCR ảnh/PDF scan (Mathpix/Pix2Text), lưu file trên R2, mô hình phân loại thay luật nhận dạng | chưa |
 
 **Hạn chế hiện tại:** ảnh và PDF scan báo lỗi "cần OCR". Biến thể dạng "giữ như đề gốc" có đáp án là tập nghiệm của bất phương trình hoặc biểu thức

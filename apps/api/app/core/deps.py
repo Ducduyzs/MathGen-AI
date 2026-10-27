@@ -18,6 +18,8 @@ async def current_user(db: Db, authorization: Annotated[str | None, Header()] = 
     user = await db.get(User, payload["sub"]) if payload else None
     if not user:
         raise ApiError(401, "unauthorized")
+    if user.disabled_at:
+        raise ApiError(403, "account_disabled")
     return user
 
 

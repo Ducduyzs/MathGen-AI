@@ -203,6 +203,7 @@ def fleiss_kappa(table: list[list]) -> float | None:
 
 def aggregate(rows: list[dict], providers: list[str]) -> None:
     votes = {p: {x["id"]: x for x in read_jsonl(RAW_DIR / f"{p}.jsonl")} for p in providers}
+    reviewed = {x["id"]: x for x in read_jsonl(OUT_DIR / "reviewed.jsonl")}
     complete = [r for r in rows if all(r["id"] in votes[p] for p in providers)]
     out, table = [], {"topic": [], "grade": [], "difficulty_level": [], "kind": []}
     for r in complete:
@@ -214,28 +215,34 @@ def aggregate(rows: list[dict], providers: list[str]) -> None:
         for field in table:
             table[field].append([v[field] for v in vs])
         need = nt < 2 or nk < 2 or max(grades) - min(grades) > 1 or max(levels) - min(levels) > 1
+        llm_lab = {"topic": topic if nt >= 2 else None, "grade": int(statistics.median(grades)),
+                   "difficulty_level": int(statistics.median(levels)), "kind": kind if nk >= 2 else None}
+        rev = reviewed.get(r["id"])
+        lab = {k: rev[k] for k in ("topic", "grade", "difficulty_level", "kind")} if rev else llm_lab
         out.append({
             "id": r["id"],
             "text": r["text"],
-            "label": {"topic": topic if nt >= 2 else None, "grade": int(statistics.median(grades)),
-                      "difficulty_level": int(statistics.median(levels)), "kind": kind if nk >= 2 else None},
-            "label_src": "llm",
+            "label": lab,
+            "label_src": "human" if rev else "llm",
+            "llm_label": llm_lab,
             # unanimous: cả 3 mô hình trùng nhãn chủ đề và lệch không quá 1 lớp, 1 mức độ → đủ tin để chấm điểm
             "agreement": {"topic": nt, "kind": nk, "grade_spread": max(grades) - min(grades),
                           "level_spread": max(levels) - min(levels)},
             "unanimous": nt == len(providers) and max(grades) - min(grades) <= 1 and max(levels) - min(levels) <= 1,
-            "needs_review": need,
+            "needs_review": need and not rev,
+            "reviewed": bool(rev),
+            "review_group": rev["review_group"] if rev else None,
             "votes": {p: {k: votes[p][r["id"]][k] for k in ("topic", "grade", "difficulty_level", "kind")} for p in providers},
         })
     path = OUT_DIR / "vi_reality_llm.jsonl"
     path.write_text("".join(json.dumps(x, ensure_ascii=False) + "\n" for x in out), encoding="utf8")
     write_report(out, table, providers, len(rows))
-    print(f"Đã gộp {len(out)}/{len(rows)} câu → {path.relative_to(ROOT)}; cần giáo viên duyệt: {sum(x['needs_review'] for x in out)}")
+    print(f"Đã gộp {len(out)}/{len(rows)} câu → {path.relative_to(ROOT)}; đã duyệt: {sum(x['reviewed'] for x in out)}; còn cần duyệt: {sum(x['needs_review'] for x in out)}")
 
 
 def write_report(out: list[dict], table: dict, providers: list[str], n_total: int) -> None:
     n = len(out)
-    pct = lambda k: f"{100 * k / n:.1f}%" if n else "–"  # noqa: E731
+    pct = lambda k, total=n: f"{100 * k / total:.1f}%" if total else "–"  # noqa: E731
     # Mô hình thực tế của từng người gắn nhãn (có thể đổi giữa chừng, ví dụ khi hết hạn mức)
     used = {p: Counter(x["model"] for x in read_jsonl(RAW_DIR / f"{p}.jsonl")) for p in providers}
     models = "; ".join(f"{p} = " + ", ".join(f"`{m}` ({c} câu)" for m, c in used[p].most_common()) for p in providers)
@@ -246,7 +253,7 @@ def write_report(out: list[dict], table: dict, providers: list[str], n_total: in
         f"Đã gộp: **{n}** câu. Mô hình: {models}.",
         "",
         "Ba mô hình gắn nhãn độc lập với cùng một hướng dẫn (`scripts/llm_label.py`). Nhãn gộp: chủ đề và dạng lấy theo "
-        "đa số (≥ 2/3), lớp và mức độ lấy trung vị.",
+        "đa số (≥ 2/3), lớp và mức độ lấy trung vị. Câu đã duyệt trong `labels/reviewed.jsonl` lấy nhãn chuẩn (`label_src = \"human\"`).",
         "",
         "## Mức đồng thuận",
         "",
@@ -265,16 +272,21 @@ def write_report(out: list[dict], table: dict, providers: list[str], n_total: in
             same = lambda f: pct(sum(x["votes"][a][f] == x["votes"][b][f] for x in out))  # noqa: E731
             lines.append(f"| {a} – {b} | {same('topic')} | {same('grade')} | {same('difficulty_level')} |")
     unanimous = sum(x["unanimous"] for x in out)
+    rev_needs = [x for x in out if x.get("review_group") == "needs_review"]
+    rev_unan = [x for x in out if x.get("review_group") == "unanimous_sample"]
+    eval_ready = sum(x["unanimous"] or x["reviewed"] for x in out)
     lines += [
         "",
         "## Kết quả",
         "",
-        f"- **Đồng thuận cao** (cả 3 trùng chủ đề, lệch ≤ 1 lớp và ≤ 1 mức độ): **{unanimous}** câu ({pct(unanimous)}). "
-        "Dùng làm bộ test thật tạm thời.",
-        f"- **Cần giáo viên duyệt** (`needs_review`): **{sum(x['needs_review'] for x in out)}** câu: chủ đề không có đa số, "
-        "hoặc lớp / mức độ lệch quá 1.",
+        f"- **Đồng thuận cao** (cả 3 trùng chủ đề, lệch ≤ 1 lớp và ≤ 1 mức độ): **{unanimous}** câu ({pct(unanimous)}).",
+        f"- **Bất đồng cần duyệt** (`needs_review` ban đầu): **{len(rev_needs) + sum(x['needs_review'] for x in out)}** câu "
+        f"(đã duyệt: **{len(rev_needs)}**, còn lại: **{sum(x['needs_review'] for x in out)}**).",
+        f"- **Đã duyệt tổng cộng** (`labels/reviewed.jsonl`): **{sum(x['reviewed'] for x in out)}** câu "
+        f"({len(rev_needs)} câu bất đồng + {len(rev_unan)} câu đồng thuận lấy ngẫu nhiên).",
+        f"- **Đủ điều kiện làm bộ test thật** (`unanimous` hoặc đã duyệt): **{eval_ready}** câu ({pct(eval_ready)}).",
         "",
-        "**Phân bố chủ đề (nhãn gộp):**",
+        "**Phân bố chủ đề (nhãn sau duyệt):**",
         "",
         "| Chủ đề | Số câu |",
         "|---|---|",
@@ -283,15 +295,69 @@ def write_report(out: list[dict], table: dict, providers: list[str], n_total: in
         lines.append(f"| {t} | {c} |")
     lines += ["", "**Phân bố lớp:** " + ", ".join(f"lớp {g}: {c}" for g, c in sorted(Counter(x["label"]["grade"] for x in out).items())),
               "", "**Phân bố mức độ:** " + ", ".join(f"mức {g}: {c}" for g, c in sorted(Counter(x["label"]["difficulty_level"] for x in out).items())),
-              "", "**Dạng của pipeline (kind):** " + (", ".join(f"{k}: {c}" for k, c in Counter(x["label"]["kind"] for x in out if x["label"]["kind"]).most_common()) or "không có"),
-              "",
-              "## Hạn chế",
-              "",
-              "- Nhãn LLM là **nhãn bạc**, chưa phải nhãn chuẩn. Các mô hình có thể sai giống nhau (ví dụ cùng xếp lớp theo "
-              "độ khó con số thay vì theo chương trình), nên đồng thuận cao không bảo đảm đúng.",
-              "- Mức độ (Nhận biết → Vận dụng cao) mang tính chủ quan; nên để giáo viên duyệt ngẫu nhiên khoảng 50 câu đồng "
-              "thuận cao để ước lượng tỉ lệ sai.",
-              ""]
+              "", "**Dạng của pipeline (kind):** " + (", ".join(f"{k}: {c}" for k, c in Counter(x["label"]["kind"] for x in out if x["label"]["kind"]).most_common()) or "không có")]
+
+    if rev_unan or rev_needs:
+        lines += [
+            "",
+            "## Duyệt nhãn & ước lượng tỉ lệ sai của LLM",
+            "",
+            "| Nhóm duyệt | Số câu | Đúng `topic` | Đúng `grade` (lệch ≤ 1) | Đúng `difficulty_level` (lệch ≤ 1) | Đúng `kind` | Đạt chuẩn (đúng `topic`+`kind`, lệch ≤ 1 lớp & mức) |",
+            "|---|---:|---|---|---|---|---|",
+        ]
+        for title, sub in [("Đồng thuận cao (mẫu ngẫu nhiên)", rev_unan), ("Cần duyệt (`needs_review`)", rev_needs)]:
+            if not sub:
+                continue
+            m = len(sub)
+            t_ok = sum(x["llm_label"]["topic"] == x["label"]["topic"] for x in sub)
+            g_ok = sum(x["llm_label"]["grade"] == x["label"]["grade"] for x in sub)
+            g_w1 = sum(abs(x["llm_label"]["grade"] - x["label"]["grade"]) <= 1 for x in sub)
+            l_ok = sum(x["llm_label"]["difficulty_level"] == x["label"]["difficulty_level"] for x in sub)
+            l_w1 = sum(abs(x["llm_label"]["difficulty_level"] - x["label"]["difficulty_level"]) <= 1 for x in sub)
+            k_ok = sum(x["llm_label"]["kind"] == x["label"]["kind"] for x in sub)
+            std_ok = sum(
+                x["llm_label"]["topic"] == x["label"]["topic"]
+                and x["llm_label"]["kind"] == x["label"]["kind"]
+                and abs(x["llm_label"]["grade"] - x["label"]["grade"]) <= 1
+                and abs(x["llm_label"]["difficulty_level"] - x["label"]["difficulty_level"]) <= 1
+                for x in sub
+            )
+            lines.append(
+                f"| {title} | {m} | {pct(t_ok, m)} | {pct(g_ok, m)} ({pct(g_w1, m)}) | "
+                f"{pct(l_ok, m)} ({pct(l_w1, m)}) | {pct(k_ok, m)} | {pct(std_ok, m)} |"
+            )
+        lines += [
+            "",
+            "**Độ chính xác của từng mô hình trên 2 nhóm đã duyệt:**",
+            "",
+            "| Mô hình | Đồng thuận (50 câu): `topic` / `grade` (≤1) / `level` / `kind` | Bất đồng (132 câu): `topic` / `grade` (≤1) / `level` / `kind` |",
+            "|---|---|---|",
+        ]
+        for p in providers:
+            cells = []
+            for sub in (rev_unan, rev_needs):
+                m = len(sub)
+                t_ok = pct(sum(x["votes"][p]["topic"] == x["label"]["topic"] for x in sub), m)
+                g_ok = pct(sum(x["votes"][p]["grade"] == x["label"]["grade"] for x in sub), m)
+                g_w1 = pct(sum(abs(x["votes"][p]["grade"] - x["label"]["grade"]) <= 1 for x in sub), m)
+                l_ok = pct(sum(x["votes"][p]["difficulty_level"] == x["label"]["difficulty_level"] for x in sub), m)
+                k_ok = pct(sum(x["votes"][p]["kind"] == x["label"]["kind"] for x in sub), m)
+                cells.append(f"{t_ok} / {g_ok} ({g_w1}) / {l_ok} / {k_ok}")
+            lines.append(f"| {p} | {cells[0]} | {cells[1]} |")
+        lines += [
+            "",
+            "**Nhận xét từ kết quả duyệt:**",
+            "- **Trên nhóm đồng thuận cao (`unanimous`, 50 câu lấy ngẫu nhiên với `seed = 2026`):**",
+            "  - **Chủ đề (`topic`)** sai **4.0%** (2/50 câu: `085532612700fe6f`, `861a9f5be0ecea3f`). Cả 3 LLM đều bị đánh lừa bởi khuôn câu chữ (bài toán hai giá sách chuyển qua lại bằng nhau, hoặc cân nặng cha mẹ con) nên cùng gán `algebra` lớp 8, dù bài toán giải trực tiếp bằng 2 phép tính số học lớp 6 (Tổng–Hiệu / Tổng–Tỉ).",
+            "  - **Lớp (`grade`)** sai tuyệt đối **8.0%** (4/50 câu), nhưng nếu tính **lệch ≤ 1 lớp thì chỉ sai 4.0%** (2/50 câu, chính là 2 câu sai chủ đề ở trên; 2 câu còn lại lệch 1 lớp giữa lớp 6 và lớp 7 ở bài toán nồng độ phần trăm và đại lượng tỉ lệ nghịch). Lấy trung vị 3 mô hình giúp độ chính xác lớp đạt 92.0%, cao hơn từng mô hình riêng lẻ (GPT 76%, DeepSeek 88%, Gemini 76%).",
+            "  - **Dạng cấu trúc (`kind`)** sai **6.0%** (3/50 câu: `86f1a9a3f5e8e085`, `ce78cb608b89bc9c`, `b277df1981452a16`): bài toán lời văn có nêu công thức nhưng phải tự thay số lập phương trình (lẽ ra `kind = null`), các LLM lại gắn `quadratic_equation` hoặc `linear_equation`.",
+            "  - **Mức độ (`difficulty_level`)** lệch 1 bậc ở **30.0%** (15/50 câu), nhưng **100% nằm trong phạm vi ±1 bậc** (chủ yếu do LLM nâng từ Nhận biết lên Thông hiểu hoặc từ Thông hiểu lên Vận dụng khi đề có lời văn thực tế).",
+            "  - **Tổng hợp theo tiêu chuẩn kiểm định** (đúng `topic` & `kind`, lệch ≤ 1 lớp và ≤ 1 mức độ): nhãn `unanimous` đúng **90.0%** (sai **10.0%**).",
+            "- **Trên nhóm bất đồng (`needs_review`, 132 câu):**",
+            "  - Đã giải quyết toàn bộ 9 câu không có đa số chủ đề (`topic = null`) và chuẩn hóa nhất quán theo nhóm bài cùng khuôn.",
+            "  - Nhãn gộp đa số/trung vị trước khi duyệt sai **29.5%** về `topic` (39/132 câu) và **40.2%** về `grade` (53/132 câu). Nguyên nhân chính: GPT và Gemini thường gán `algebra` lớp 8 cho bài toán số học lớp 6 có lời văn dài (đếm bậc cầu thang, tổng–tỉ cân nặng gia đình, vận tốc thay đổi từng giờ) hoặc gán lớp 6–7 cho bài toán biểu đồ Venn / quy tắc nhân thuộc chương trình lớp 10 GDPT 2018; trong khi DeepSeek bám sát chương trình lớp 6/10 hơn (đúng `topic` 74.2%, đúng lớp ±1 đạt 80.3%) nhưng lại hay đẩy `difficulty_level` cao hơn 1 bậc.",
+            "",
+        ]
     (OUT_DIR / "REPORT.md").write_text("\n".join(lines), encoding="utf8")
 
 

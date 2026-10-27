@@ -6,9 +6,11 @@ import { Html, Sky, Sparkles, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import type { TablePhase, TablePlayer, TableRoom } from "@/types/api";
 import { SEAT_COLORS, shortName, type SkyId } from "../model";
+import { Astronaut, type Mood } from "./Astronaut";
+import { SpaceProps } from "./SpaceProps";
 
 const SEAT_RADIUS = 2.1;
-const EYE = 1.4;
+const EYE = 1.55;
 const TABLE_Y = 0.8;
 const SPIN_MS = 2200; // khớp với lúc bảng kết quả hiện "An toàn" / "Trúng hố đen"
 
@@ -21,7 +23,7 @@ const onCircle = (angle: number, r: number, y = 0) => new THREE.Vector3(Math.sin
 /** Kéo chuột / vuốt để xoay đầu; vị trí camera cố định tại ghế (không đi lại được). Nhấp đúp để nhìn lại giữa bàn. */
 function LookAround() {
   const { camera, gl } = useThree();
-  const view = useRef({ yaw: 0, pitch: -0.3, targetYaw: 0, targetPitch: -0.3, drag: null as null | { x: number; y: number } });
+  const view = useRef({ yaw: 0, pitch: -0.32, targetYaw: 0, targetPitch: -0.32, drag: null as null | { x: number; y: number } });
 
   useEffect(() => {
     const el = gl.domElement;
@@ -43,7 +45,7 @@ function LookAround() {
       view.current.drag = null;
       el.style.cursor = "grab";
     };
-    const reset = () => Object.assign(view.current, { targetYaw: 0, targetPitch: -0.3 });
+    const reset = () => Object.assign(view.current, { targetYaw: 0, targetPitch: -0.32 });
     el.addEventListener("pointerdown", down);
     el.addEventListener("pointermove", move);
     el.addEventListener("pointerup", up);
@@ -130,8 +132,7 @@ function SkyBox({ sky }: { sky: SkyId }) {
           <Nebula position={[-30, 12, -40]} scale={22} color="#8b5cf6" />
           <Nebula position={[35, -4, -30]} scale={18} color="#ec4899" />
           <Nebula position={[10, 20, 40]} scale={25} color="#38bdf8" />
-          <Planet position={[-16, 7, -24]} radius={4} color="#7c5cff" ring="#c4b5fd" />
-          <Planet position={[22, 3, 18]} radius={2} color="#f59e0b" />
+          <Planet position={[-30, 16, 36]} radius={5} color="#7c5cff" ring="#c4b5fd" />
         </>
       )}
       <ambientLight intensity={0.45} color="#c7d2fe" />
@@ -292,6 +293,17 @@ function Avatar({ player, angle, phase }: { player: TablePlayer; angle: number; 
   const body = useRef<THREE.Group>(null);
   const color = SEAT_COLORS[player.seat];
   const pos = onCircle(angle, SEAT_RADIUS);
+  const mood: Mood = !player.alive
+    ? "out"
+    : phase === "question"
+      ? player.answered
+        ? "answered"
+        : "idle"
+      : phase === "reveal" && player.last
+        ? player.last.correct
+          ? "correct"
+          : "wrong"
+        : "answered";
 
   useFrame((state, dt) => {
     if (!body.current) return;
@@ -313,26 +325,7 @@ function Avatar({ player, angle, phase }: { player: TablePlayer; angle: number; 
       </mesh>
       {!player.alive && <BlackHole />}
       <group ref={body}>
-        <mesh position={[0, 0.98, 0.1]}>
-          <capsuleGeometry args={[0.2, 0.42, 8, 16]} />
-          <meshStandardMaterial color={color} roughness={0.45} transparent opacity={player.alive ? 1 : 0.35} />
-        </mesh>
-        <mesh position={[0, 1.5, 0.08]}>
-          <sphereGeometry args={[0.2, 32, 32]} />
-          <meshStandardMaterial color="#e2e8f0" roughness={0.3} transparent opacity={player.alive ? 1 : 0.35} />
-        </mesh>
-        {/* Kính phi hành gia hướng về giữa bàn */}
-        <mesh position={[0, 1.51, -0.05]} scale={[1, 0.62, 0.55]}>
-          <sphereGeometry args={[0.16, 32, 32]} />
-          <meshStandardMaterial color="#0b1020" metalness={0.9} roughness={0.1} emissive={color} emissiveIntensity={0.25} />
-        </mesh>
-        {/* Hai tay đặt lên bàn */}
-        {[-0.24, 0.24].map((x) => (
-          <mesh key={x} position={[x, 0.86, -0.28]} rotation-x={Math.PI / 2.3}>
-            <capsuleGeometry args={[0.055, 0.32, 4, 8]} />
-            <meshStandardMaterial color={color} transparent opacity={player.alive ? 1 : 0.35} />
-          </mesh>
-        ))}
+        <Astronaut color={color} mood={mood} />
       </group>
       <Html position={[0, 1.88, 0]} center distanceFactor={6} zIndexRange={[5, 0]} className="pointer-events-none">
         <Status player={player} phase={phase} />
@@ -349,6 +342,7 @@ function Scene({ room, sky }: { room: TableRoom; sky: SkyId }) {
   return (
     <>
       <SkyBox sky={sky} />
+      <SpaceProps sky={sky} />
       <Table phase={room.phase} />
       {seats.map(({ p, angle }) => (
         <group key={p.seat}>
@@ -366,7 +360,7 @@ export function TableScene({ room, sky }: { room: TableRoom; sky: SkyId }) {
     <div className="absolute inset-0">
       <Canvas
       dpr={[1, 2]}
-      camera={{ fov: 62, near: 0.05, far: 400, position: [0, EYE, SEAT_RADIUS + 0.45] }}
+      camera={{ fov: 58, near: 0.05, far: 400, position: [0, EYE, SEAT_RADIUS + 0.95] }}
       gl={{ antialias: true }}
     >
       <Scene room={room} sky={sky} />

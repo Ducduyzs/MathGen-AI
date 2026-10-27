@@ -13,7 +13,7 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 export default async function ProblemsPage({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
   const one = (key: string) => (typeof sp[key] === "string" && sp[key] ? (sp[key] as string) : undefined);
-  const query: ProblemQuery = { grade: one("grade"), skill: one("skill"), level: one("level"), q: one("q") };
+  const query: ProblemQuery = { grade: one("grade"), skill: one("skill"), level: one("level"), q: one("q"), province: one("province") };
 
   const [data, skills] = await Promise.all([getProblems(query), getSkills()]);
   const items = data?.items ?? [];

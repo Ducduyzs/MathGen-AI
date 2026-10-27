@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { errorMessage } from "@/lib/api/errors";
 import { isTyping, percent } from "@/lib/utils";
 import type { ReviewItem } from "@/types/api";
+import { RegionLabel } from "@/features/regions";
 import { useReviewDecision, useReviewQueue } from "../api";
 
 const LOW_CONFIDENCE = 0.7;
@@ -176,6 +177,8 @@ function OriginPanel({ item }: { item: ReviewItem }) {
                     {item.source.url}
                   </a>
                   {item.source.license && <span className="text-muted"> · Giấy phép: {item.source.license}</span>}
+                  <br />
+                  <RegionLabel region={item.source} className="mt-1 inline-flex items-center gap-1 text-xs text-muted" />
                 </>
               )}
             </p>

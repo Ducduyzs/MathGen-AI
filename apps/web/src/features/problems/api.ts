@@ -8,6 +8,8 @@ export interface ProblemQuery {
   /** 1–4: Nhận biết, Thông hiểu, Vận dụng, Vận dụng cao. */
   level?: string;
   q?: string;
+  /** Mã tỉnh: chỉ bài từ đề thật của tỉnh đó. */
+  province?: string;
 }
 
 export function getProblems(query: ProblemQuery) {

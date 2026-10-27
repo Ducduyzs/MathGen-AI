@@ -9,6 +9,8 @@ export interface User {
   full_name: string;
   role: Role;
   grade: number | null;
+  /** Tỉnh/thành (mã đơn vị hành chính mới): gợi ý đề theo khu vực. */
+  province_code?: string | null;
 }
 
 export interface LoginResponse {
@@ -23,6 +25,7 @@ export interface RegisterRequest {
   /** Đăng ký công khai: học sinh (bắt buộc chọn lớp) hoặc phụ huynh. */
   role?: "student" | "parent";
   grade?: number | null;
+  province_code?: string | null;
 }
 
 export interface Skill {
@@ -127,7 +130,7 @@ export interface ReviewItem {
   parent?: { id: string; statement: string };
   transform?: string;
   /** Nguồn gốc: file tải lên (trang) hoặc trang web bộ gom lấy về (URL, giấy phép). */
-  source?: { name: string; page?: number; url?: string; site?: string; license?: string };
+  source?: { name: string; page?: number; url?: string; site?: string; license?: string } & Partial<ExamRegion>;
   choices?: Choice[];
   checks: VerificationCheck[];
 }
@@ -234,6 +237,37 @@ export interface CreateExamRequest {
   templates?: string[];
   /** Làm lại các câu sai của đề này. */
   retry_of?: string;
+  /** Đề theo khu vực: ưu tiên câu đề thật của tỉnh (và trường), thiếu thì bổ sung câu tự sinh. */
+  province?: string;
+  school_id?: string;
+}
+
+/** Khu vực của một đề gốc (nhận diện từ phần đầu đề hoặc khai báo của nguồn). */
+export interface ExamRegion {
+  province_code: string | null;
+  province_name?: string | null;
+  province_raw?: string | null;
+  school_id?: string | null;
+  school_name: string | null;
+  exam_kind: string | null;
+  exam_kind_label?: string | null;
+  exam_year: number | null;
+}
+
+export interface ProvinceStats {
+  code: string;
+  name: string;
+  problems: number;
+  schools: number;
+}
+
+export interface SchoolInfo {
+  id: string;
+  name: string;
+  province_code: string;
+  level: string | null;
+  level_label: string | null;
+  problems: number;
 }
 
 export interface SubmitExamRequest {
@@ -307,6 +341,7 @@ export interface IngestionSource {
   error: string | null;
   items: ExtractedItem[];
   stats: IngestionStats;
+  region?: ExamRegion | null;
 }
 
 export interface IngestionSourceSummary {
@@ -806,6 +841,9 @@ export interface CrawlSource {
   license_label: string;
   permission_note: string | null;
   terms_url: string | null;
+  province_code: string | null;
+  province_name: string | null;
+  school_name: string | null;
   grade_min: number;
   grade_max: number;
   max_pages: number;
@@ -823,6 +861,8 @@ export interface CreateCrawlSourceRequest {
   license: CrawlLicense;
   permission_note?: string;
   terms_url?: string;
+  province_code?: string;
+  school_name?: string;
   grade_min: number;
   grade_max: number;
   max_pages: number;
@@ -848,6 +888,7 @@ export interface CrawlPageResult {
   ingestion_source_id: string | null;
   error: string | null;
   fetched_at: string;
+  region?: ExamRegion | null;
 }
 
 export interface CrawlJob extends CrawlJobSummary {

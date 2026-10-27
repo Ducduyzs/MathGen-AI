@@ -47,6 +47,11 @@ class Problem(Timestamped, Base):
     canonical_hash: Mapped[str | None] = mapped_column(String(64), unique=True)
     status: Mapped[str] = mapped_column(String(16), default="approved")
     origin: Mapped[str] = mapped_column(String(16), default="seed")
+    # Khu vực của đề gốc (bài thu thập từ đề thật): tỉnh theo đơn vị hành chính mới, trường, kỳ thi, năm học
+    province_code: Mapped[str | None] = mapped_column(String(32), index=True)
+    school_id: Mapped[str | None] = mapped_column(ForeignKey("schools.id", ondelete="SET NULL"), index=True)
+    exam_kind: Mapped[str | None] = mapped_column(String(24))
+    exam_year: Mapped[int | None] = mapped_column(Integer)
 
 
 class ReviewItem(Timestamped, Base):

@@ -8,6 +8,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { FieldError, Input, Label, Select, Textarea } from "@/components/ui/input";
 import { errorMessage } from "@/lib/api/errors";
 import { GRADES } from "@/lib/grades";
+import { PROVINCES_SORTED } from "@/lib/regions";
 import type { CrawlLicense } from "@/types/api";
 import { useCreateCrawlSource } from "../api";
 import { LICENSE_OPTIONS, lines } from "../model";
@@ -22,6 +23,8 @@ export function SourceForm({ onDone }: { onDone: () => void }) {
   const [note, setNote] = useState("");
   const [terms, setTerms] = useState("");
   const [grades, setGrades] = useState<[number, number]>([1, 12]);
+  const [province, setProvince] = useState("");
+  const [school, setSchool] = useState("");
   const [maxPages, setMaxPages] = useState(50);
   const [depth, setDepth] = useState(2);
   const [delay, setDelay] = useState(3);
@@ -34,7 +37,7 @@ export function SourceForm({ onDone }: { onDone: () => void }) {
     create.mutate(
       {
         name: name.trim(), start_urls: lines(urls), include_paths: lines(paths), license, permission_note: note.trim() || undefined,
-        terms_url: terms.trim() || undefined, grade_min: grades[0], grade_max: grades[1], max_pages: maxPages, max_depth: depth,
+        terms_url: terms.trim() || undefined, province_code: province || undefined, school_name: school.trim() || undefined, grade_min: grades[0], grade_max: grades[1], max_pages: maxPages, max_depth: depth,
         delay_seconds: delay, confirm: true,
       },
       {
@@ -85,6 +88,22 @@ export function SourceForm({ onDone }: { onDone: () => void }) {
           <Label htmlFor="cs-note">Bằng chứng cho phép {needNote ? "(bắt buộc)" : "(tùy chọn)"}</Label>
           <Textarea id="cs-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Số văn bản, email đồng ý của chủ sở hữu, ngày…" className="min-h-16" />
           {needNote && !note.trim() && <FieldError message="Cần ghi bằng chứng cho phép để lưu nguồn." />}
+        </div>
+        <div>
+          <Label htmlFor="cs-province">Tỉnh/thành mặc định (tùy chọn)</Label>
+          <Select id="cs-province" value={province} onChange={(e) => setProvince(e.target.value)}>
+            <option value="">Tự nhận diện từ đề</option>
+            {PROVINCES_SORTED.map((p) => (
+              <option key={p.code} value={p.code}>
+                {p.name}
+              </option>
+            ))}
+          </Select>
+          <p className="mt-1.5 text-xs text-muted">Dùng khi đề không ghi &quot;Sở GD&amp;ĐT …&quot;. Đề ghi tỉnh cũ được xếp vào tỉnh mới.</p>
+        </div>
+        <div>
+          <Label htmlFor="cs-school">Trường mặc định (tùy chọn)</Label>
+          <Input id="cs-school" value={school} onChange={(e) => setSchool(e.target.value)} placeholder="VD: Trường THPT Chuyên Phan Bội Châu" />
         </div>
         <div className="grid grid-cols-2 gap-3 sm:col-span-2 sm:grid-cols-5">
           <div>

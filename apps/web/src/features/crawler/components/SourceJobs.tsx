@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RegionLabel } from "@/features/regions";
 import { cn, timeAgo } from "@/lib/utils";
 import { useCrawlJob, useCrawlJobs, useCrawlSources } from "../api";
 import { JOB_STATUS, PAGE_STATUS } from "../model";
@@ -62,6 +63,7 @@ export function SourceJobs({ sourceId }: { sourceId: string }) {
                     <ExternalLink className="size-3.5 shrink-0 text-muted" aria-hidden />
                   </a>
                   {p.error && <span className="text-xs text-danger-700">{p.error}</span>}
+                  <RegionLabel region={p.region} className="inline-flex w-full items-center gap-1 pl-1 text-xs text-muted sm:order-last" />
                   {p.questions > 0 && (
                     <span className={cn("text-xs tabular-nums", p.submitted ? "text-success-700" : "text-muted")}>
                       {p.questions} câu · {p.submitted} gửi duyệt

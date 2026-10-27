@@ -40,6 +40,8 @@ class IngestionSource(Timestamped, Base):
     error: Mapped[str | None] = mapped_column(Text)
     #: Các câu đã tách, kèm cấu trúc nội bộ (_structure, _key) để sinh biến thể
     items: Mapped[list] = mapped_column(JSONB, default=list)
+    #: Khu vực nhận diện từ phần đầu đề: tỉnh, trường, kỳ thi, năm học (regions.detect)
+    region: Mapped[dict | None] = mapped_column(JSONB)
 
 
 class GeneratedVariant(Timestamped, Base):

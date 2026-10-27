@@ -84,6 +84,8 @@ class SourceOut(SourceSummaryOut):
     steps: list[StepOut]
     error: str | None
     items: list[ExtractedItemOut]
+    # Khu vực nhận diện từ phần đầu đề (tỉnh, trường, kỳ thi, năm học)
+    region: dict | None = None
 
 
 class GenerateIn(BaseModel):

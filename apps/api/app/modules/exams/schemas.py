@@ -34,6 +34,9 @@ class CreateExamIn(BaseModel):
     templates: list[Annotated[str, Field(max_length=64)]] | None = Field(default=None, max_length=50)
     # Làm lại các câu sai của đề này
     retry_of: str | None = Field(default=None, max_length=26)
+    # Đề theo khu vực: ưu tiên câu thật thu thập từ đề của tỉnh (và trường) này, thiếu thì bổ sung câu tự sinh
+    province: str | None = Field(default=None, max_length=32)
+    school_id: str | None = Field(default=None, max_length=26)
 
 
 class SubmitExamIn(BaseModel):

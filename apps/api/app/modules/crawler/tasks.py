@@ -110,8 +110,10 @@ def crawl_job(job_id: str) -> str:
                     _record(db, src, job, url, status="no_questions", **base)
                 else:
                     provenance = {"name": title[:200], "url": got.url, **provenance_base}
-                    source_id, n, sent = ingestion.ingest_crawled_sync(db, job.created_by, f"{src.name} · {title}", text, provenance)
-                    _record(db, src, job, url, status="fetched", questions=n, submitted=sent, ingestion_source_id=source_id, **base)
+                    source_id, n, sent, region = ingestion.ingest_crawled_sync(
+                        db, job.created_by, f"{src.name} · {title}", text, provenance, src.province_code, src.school_name)
+                    _record(db, src, job, url, status="fetched", questions=n, submitted=sent, ingestion_source_id=source_id,
+                            extra={"region": region}, **base)
                     job.documents += 1
                     job.questions += n
                     job.submitted += sent

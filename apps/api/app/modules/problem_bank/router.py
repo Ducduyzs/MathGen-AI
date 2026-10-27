@@ -13,8 +13,9 @@ async def skills(db: Db):
 
 
 @router.get("/problems", response_model=ProblemPage, response_model_exclude_none=True)
-async def problems(db: Db, grade: int | None = None, skill: str | None = None, level: int | None = None, q: str | None = None):
-    return await service.list_problems(db, grade, skill, level, q)
+async def problems(db: Db, grade: int | None = None, skill: str | None = None, level: int | None = None, q: str | None = None,
+                   province: str | None = None):
+    return await service.list_problems(db, grade, skill, level, q, province)
 
 
 @router.get("/problems/{problem_id}", response_model=PublicProblem, response_model_exclude_none=True)

@@ -10,6 +10,7 @@ from app.core.errors import ApiError
 from app.modules.crawler import fetch, policy, tasks
 from app.modules.crawler.models import CrawlJob, CrawlPage, CrawlSource
 from app.modules.crawler.schemas import JobOut, JobSummary, PageOut, RobotsCheck, SourceIn, SourceOut, SourceUpdate
+from app.modules.regions import service as regions
 from app.modules.users.models import User
 
 PAGES_SHOWN = 200
@@ -23,7 +24,8 @@ def _job_summary(j: CrawlJob) -> JobSummary:
 def _out(s: CrawlSource, last: CrawlJob | None) -> SourceOut:
     return SourceOut(
         id=s.id, name=s.name, domain=s.domain, start_urls=s.start_urls, include_paths=s.include_paths, license=s.license,
-        license_label=policy.LICENSES[s.license], permission_note=s.permission_note, terms_url=s.terms_url, grade_min=s.grade_min,
+        license_label=policy.LICENSES[s.license], permission_note=s.permission_note, terms_url=s.terms_url,
+        province_code=s.province_code, province_name=regions.province_name(s.province_code), school_name=s.school_name, grade_min=s.grade_min,
         grade_max=s.grade_max, max_pages=s.max_pages, max_depth=s.max_depth, delay_seconds=s.delay_seconds, status=s.status,
         created_at=s.created_at, last_job=_job_summary(last) if last else None,
     )
@@ -54,11 +56,13 @@ async def create_source(db: AsyncSession, user: User, body: SourceIn) -> SourceO
     paths = sorted(set(body.include_paths))
     if any(not policy.in_scope(u, domain, paths) for u in urls):
         raise ApiError(422, "crawl_out_of_scope")  # điểm bắt đầu phải nằm trong thư mục được phép
+    regions.check_province(body.province_code)
     if not await asyncio.to_thread(fetch.PUBLIC_HOST_CHECK, domain):
         raise ApiError(422, "crawl_private_host")
     s = CrawlSource(
         name=body.name.strip(), domain=domain, start_urls=urls, include_paths=paths, license=body.license,
         permission_note=(body.permission_note or "").strip() or None, terms_url=str(body.terms_url) if body.terms_url else None,
+        province_code=body.province_code, school_name=(body.school_name or "").strip() or None,
         grade_min=body.grade_min, grade_max=body.grade_max, max_pages=body.max_pages, max_depth=body.max_depth,
         delay_seconds=body.delay_seconds, status="active", created_by=user.id, created_at=datetime.now(UTC),
     )
@@ -136,4 +140,5 @@ async def get_job(db: AsyncSession, job_id: str) -> JobOut:
     pages = await db.scalars(select(CrawlPage).where(CrawlPage.job_id == job.id).order_by(CrawlPage.fetched_at).limit(PAGES_SHOWN))
     return JobOut(**_job_summary(job).model_dump(), source_id=job.source_id, pages=[
         PageOut(url=p.url, status=p.status, http_status=p.http_status, title=p.title, questions=p.questions, submitted=p.submitted,
-                ingestion_source_id=p.ingestion_source_id, error=p.error, fetched_at=p.fetched_at) for p in pages])
+                ingestion_source_id=p.ingestion_source_id, error=p.error, fetched_at=p.fetched_at, region=(p.extra or {}).get("region"))
+        for p in pages])

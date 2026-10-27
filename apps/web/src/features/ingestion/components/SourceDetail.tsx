@@ -14,6 +14,7 @@ import type { ExtractedItem } from "@/types/api";
 import { useSource } from "../api";
 import { ItemCard } from "./ItemCard";
 import { StatusBadge } from "./SourceList";
+import { RegionLabel } from "@/features/regions";
 import { StepProgress } from "./StepProgress";
 
 type Filter = "all" | "recognized" | "unrecognized" | "duplicate";
@@ -51,7 +52,12 @@ export function SourceDetail({ id }: { id: string }) {
 
   return (
     <div className="space-y-5">
-      <PageHeader title={src.name} description={src.origin === "file" ? "Tài liệu tải lên" : "Nội dung dán vào"} actions={back} />
+      <PageHeader
+        title={src.name}
+        description={src.origin === "file" ? "Tài liệu tải lên" : src.origin === "crawl" ? "Thu thập từ nguồn được phép" : "Nội dung dán vào"}
+        actions={back}
+      />
+      <RegionLabel region={src.region} className="-mt-3 mb-4 flex items-center gap-1 text-sm text-muted" />
 
       <Card className="space-y-5 p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">

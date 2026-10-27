@@ -57,7 +57,7 @@ def run_pipeline(text: str, source_id: str, bank: dict[str, str], skill_names: d
             "id": f"{source_id}_c{rq.index}", "index": rq.index, "raw_text": rq.raw, "statement": to_display(rq.stem),
             "choices": rq.choices, "status": "unrecognized", "reason": None, "structure": None, "answer_display": None,
             "solution": [], "grade": None, "skill": None, "difficulty": None, "confidence": 0.0, "checks": [],
-            "duplicate_of": None, "matched_choice": None, "rules": [], "_structure": None, "_key": None,
+            "duplicate_of": None, "matched_choice": None, "rules": [], "_structure": None, "_key": None, "_short": None, "_short_label": None,
         }
         rec = recognize(rq.stem)
         if not rec.ok:
@@ -93,6 +93,8 @@ def run_pipeline(text: str, source_id: str, bank: dict[str, str], skill_names: d
             "skill": {"code": skill, "name": skill_names.get(skill, skill)}, "difficulty": estimate_difficulty(s),
             "confidence": rec.confidence, "checks": checks, "duplicate_of": bank_dup or inner_dup, "matched_choice": matched,
             "rules": rules_for(s.kind), "_structure": s.to_json(), "_key": key,
+            # Đáp số một số (nếu có) để bài trích từ đề thật chấm tự động được khi vào ngân hàng
+            "_short": plain(solved.short) if solved.short is not None else None, "_short_label": solved.short_label,
         })
     return out
 

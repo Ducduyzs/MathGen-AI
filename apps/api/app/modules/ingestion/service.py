@@ -21,6 +21,7 @@ from app.modules.ingestion.schemas import (
     CreateSourceIn, GenerateIn, SourceOut, SourceSummaryOut, SubmitVariantsIn, UploadUrlIn, UploadUrlOut, VariantOut,
 )
 from app.modules.problem_bank import service as bank
+from app.modules.regions import service as regions
 from app.modules.users.models import User
 
 STEPS = [("upload", "Tải lên"), ("extract", "Trích xuất văn bản"), ("split", "Tách câu hỏi"), ("recognize", "Nhận dạng dạng bài"),
@@ -54,8 +55,10 @@ def steps(src: IngestionSource) -> list[dict]:
 
 def to_out(src: IngestionSource) -> SourceOut:
     items = src.items if src.status == "done" else []
+    region = src.region and {**src.region, "province_name": regions.province_name(src.region.get("province_code")),
+                              "exam_kind_label": regions.EXAM_KINDS.get(src.region.get("exam_kind") or "")}
     return SourceOut(id=src.id, name=src.name, origin=src.origin, status=src.status, created_at=src.created_at,
-                     stats=stats(items), steps=steps(src), error=src.error, items=[public_item(i) for i in items])
+                     stats=stats(items), steps=steps(src), error=src.error, items=[public_item(i) for i in items], region=region)
 
 
 # ---------------------------------------------------------------- tải file
@@ -184,28 +187,38 @@ async def submit_variants(db: AsyncSession, user: User, body: SubmitVariantsIn) 
 def _review_row(item: dict, provenance: dict) -> dict:
     """Câu gốc đã nhận dạng → bài chờ duyệt, ghi rõ nguồn (URL, giấy phép) để giáo viên kiểm tra trước khi đưa vào ngân hàng."""
     checks = list(item["checks"])
-    answer = {"type": "choice", "value": item["matched_choice"]} if item.get("matched_choice") else None
+    if item.get("matched_choice"):
+        answer = {"type": "choice", "value": item["matched_choice"]}
+    elif item.get("_short") is not None and not item["choices"]:
+        answer = {"type": "number", "value": item["_short"]}
+    else:
+        answer = None
     if not answer:
         checks.append({"label": "Đáp án dạng tập nghiệm / biểu thức: chưa chấm tự động được", "passed": False})
     return {
         "origin": "extracted", "statement": item["statement"], "answer_display": item["answer_display"], "solution": item["solution"],
         "grade": item["grade"], "skill_code": item["skill"]["code"], "difficulty": item["difficulty"],
         "classification_confidence": item["confidence"], "parent": None, "transform": None, "source": provenance,
-        "choices": item["choices"] or None, "checks": checks, "answer": answer, "answer_prefix": None,
+        "choices": item["choices"] or None, "checks": checks, "answer": answer,
+        "answer_prefix": item.get("_short_label") if answer and answer["type"] == "number" else None,
         "canonical_hash": item["structure"]["hash"],
     }
 
 
-def ingest_crawled_sync(db: Session, user_id: str, name: str, text: str, provenance: dict) -> tuple[str, int, int]:
+def ingest_crawled_sync(db: Session, user_id: str, name: str, text: str, provenance: dict, default_province: str | None = None,
+                        default_school: str | None = None) -> tuple[str, int, int, dict]:
     """Văn bản bộ gom lấy về → tài liệu (origin "crawl") → pipeline 5 bước → câu nhận dạng & kiểm chứng đủ thì vào hàng chờ duyệt.
 
-    Trả về (mã tài liệu, số câu tách được, số câu đã gửi duyệt). Commit trong hàm.
+    Khu vực (tỉnh, trường, kỳ thi, năm học) lấy từ phần đầu đề, thiếu thì theo mặc định của nguồn; ghi vào `source` của từng bài.
+    Trả về (mã tài liệu, số câu tách được, số câu đã gửi duyệt, khu vực). Commit trong hàm.
     """
     src = IngestionSource(user_id=user_id, name=name[:200], origin="crawl", text=text, items=[], created_at=datetime.now(UTC))
     db.add(src)
     db.commit()
     tasks.process_source(src.id)  # chạy luôn trong worker hiện tại (đã ở hàng đợi ingest)
     db.refresh(src)
+    region = regions.provenance_sync(db, src.region, default_province, default_school, user_id)
+    provenance = {**provenance, **region}
     good = [i for i in src.items if i["status"] == "recognized" and not i["duplicate_of"]
             and all(c["passed"] for c in i["checks"] if not c["label"].startswith("Không phương án"))]
     good = [i for i in good if i.get("matched_choice") or not i["choices"]]  # trắc nghiệm phải khớp được đáp án
@@ -213,4 +226,4 @@ def ingest_crawled_sync(db: Session, user_id: str, name: str, text: str, provena
     rows = [_review_row(i, provenance) for i in good if i["structure"]["hash"] not in seen]
     bank.add_review_items_sync(db, rows)
     db.commit()
-    return src.id, len(src.items), len(rows)
+    return src.id, len(src.items), len(rows), region

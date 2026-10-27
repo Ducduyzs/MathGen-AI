@@ -11,6 +11,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { errorMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 import { useAuth } from "../AuthProvider";
+import { PROVINCES_SORTED } from "@/lib/regions";
 import { homeFor } from "../roles";
 
 const GRADES = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"] as const;
@@ -27,6 +28,7 @@ const schema = z
     email: z.string().trim().email("Email chưa đúng định dạng"),
     password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
     grade: z.string().optional(),
+    province: z.string().optional(),
   })
   .superRefine((v, ctx) => {
     if (v.role === "student" && !GRADES.includes(v.grade as (typeof GRADES)[number])) {
@@ -45,14 +47,14 @@ export function RegisterForm() {
     watch,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { role: "student", grade: "" } });
+  } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { role: "student", grade: "", province: "" } });
   const role = watch("role");
   const student = role === "student";
 
-  const onSubmit = handleSubmit(async ({ grade, ...rest }) => {
+  const onSubmit = handleSubmit(async ({ grade, province, ...rest }) => {
     setFormError(null);
     try {
-      const user = await signUp({ ...rest, grade: rest.role === "student" ? Number(grade) : null });
+      const user = await signUp({ ...rest, grade: rest.role === "student" ? Number(grade) : null, province_code: province || null });
       router.replace(homeFor(user.role));
     } catch (err) {
       setFormError(errorMessage(err));
@@ -115,6 +117,18 @@ export function RegisterForm() {
             <FieldError message={errors.grade?.message} />
           </div>
         )}
+      </div>
+      <div>
+        <Label htmlFor="province">Tỉnh/thành phố (tùy chọn)</Label>
+        <Select id="province" {...register("province")}>
+          <option value="">Không chọn</option>
+          {PROVINCES_SORTED.map((p) => (
+            <option key={p.code} value={p.code}>
+              {p.name}
+            </option>
+          ))}
+        </Select>
+        <p className="mt-1 text-xs text-muted">Dùng để gợi ý đề thi của khu vực bạn (theo 34 tỉnh, thành mới).</p>
       </div>
 
       {formError && (

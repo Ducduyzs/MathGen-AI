@@ -21,6 +21,9 @@ class CrawlSource(Timestamped, Base):
     license: Mapped[str] = mapped_column(String(32))
     permission_note: Mapped[str | None] = mapped_column(Text)
     terms_url: Mapped[str | None] = mapped_column(String(500))
+    # Khu vực mặc định của nguồn (vd. website một Sở GD&ĐT); đề tự ghi tỉnh/trường thì ưu tiên thông tin trên đề
+    province_code: Mapped[str | None] = mapped_column(String(32))
+    school_name: Mapped[str | None] = mapped_column(String(200))
     grade_min: Mapped[int] = mapped_column(Integer, default=1)
     grade_max: Mapped[int] = mapped_column(Integer, default=12)
     max_pages: Mapped[int] = mapped_column(Integer, default=50)

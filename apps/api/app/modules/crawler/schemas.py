@@ -14,6 +14,9 @@ class SourceIn(BaseModel):
     license: License
     permission_note: str | None = Field(default=None, max_length=2000)
     terms_url: HttpUrl | None = None
+    # Khu vực mặc định (vd. website một Sở GD&ĐT): mã tỉnh mới và tên trường (tùy chọn)
+    province_code: str | None = Field(default=None, max_length=32)
+    school_name: str | None = Field(default=None, max_length=200)
     grade_min: int = Field(default=1, ge=1, le=12)
     grade_max: int = Field(default=12, ge=1, le=12)
     max_pages: int = Field(default=50, ge=1, le=500)
@@ -61,6 +64,9 @@ class SourceOut(BaseModel):
     license_label: str
     permission_note: str | None
     terms_url: str | None
+    province_code: str | None
+    province_name: str | None
+    school_name: str | None
     grade_min: int
     grade_max: int
     max_pages: int
@@ -88,6 +94,8 @@ class PageOut(BaseModel):
     ingestion_source_id: str | None
     error: str | None
     fetched_at: datetime
+    # Khu vực của tài liệu (tỉnh, trường, kỳ thi, năm học)
+    region: dict | None = None
 
 
 class JobOut(JobSummary):

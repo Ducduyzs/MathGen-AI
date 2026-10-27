@@ -1,5 +1,6 @@
 """Giao diện công khai của module ngân hàng bài. Module khác chỉ gọi các hàm ở đây, không đọc bảng trực tiếp."""
 
+import random
 import time
 from datetime import UTC, datetime
 
@@ -57,8 +58,11 @@ def to_public(p: Problem, names: dict[str, str]) -> PublicProblem:
     )
 
 
-async def list_problems(db: AsyncSession, grade: int | None, skill: str | None, level: int | None, q: str | None) -> ProblemPage:
+async def list_problems(db: AsyncSession, grade: int | None, skill: str | None, level: int | None, q: str | None,
+                        province: str | None = None) -> ProblemPage:
     stmt = select(Problem).where(Problem.status == "approved")
+    if province:
+        stmt = stmt.where(Problem.province_code == province)
     if grade:
         stmt = stmt.where(Problem.grade == grade)
     if skill:
@@ -117,6 +121,9 @@ async def decide(db: AsyncSession, item_id: str, decision: str, reason: str | No
             answer_type=item.answer["type"], answer_prefix=item.answer_prefix, choices=item.choices, answer=item.answer,
             answer_display=item.answer_display, solution=item.solution, canonical_hash=item.canonical_hash,
             status="approved", origin=item.origin,
+            # Bài thu thập từ đề thật mang theo khu vực của đề gốc
+            province_code=(item.source or {}).get("province_code"), school_id=(item.source or {}).get("school_id"),
+            exam_kind=(item.source or {}).get("exam_kind"), exam_year=(item.source or {}).get("exam_year"),
         ))
     await db.commit()
 
@@ -138,6 +145,34 @@ def pending_hashes_sync(db: Session, hashes: list[str]) -> set[str]:
     if not hashes:
         return set()
     return set(db.scalars(select(ReviewItem.canonical_hash).where(ReviewItem.status == "pending", ReviewItem.canonical_hash.in_(hashes))))
+
+
+async def count_by_province(db: AsyncSession) -> dict[str, int]:
+    rows = await db.execute(select(Problem.province_code, func.count()).where(Problem.status == "approved", Problem.province_code.is_not(None))
+                            .group_by(Problem.province_code))
+    return dict(rows.all())
+
+
+async def count_by_school(db: AsyncSession, school_ids: list[str]) -> dict[str, int]:
+    if not school_ids:
+        return {}
+    rows = await db.execute(select(Problem.school_id, func.count()).where(Problem.status == "approved", Problem.school_id.in_(school_ids))
+                            .group_by(Problem.school_id))
+    return dict(rows.all())
+
+
+async def region_pool(db: AsyncSession, province: str, school_id: str | None, answer_type: str, skills: list[str] | None,
+                      grade: int | None) -> list[Problem]:
+    """Câu thật của một khu vực cho đề theo khu vực: cùng trường xếp trước, rồi cùng tỉnh; ưu tiên lớp gần lớp học sinh."""
+    stmt = select(Problem).where(Problem.status == "approved", Problem.province_code == province, Problem.answer_type == answer_type)
+    if skills:
+        stmt = stmt.where(Problem.skill_code.in_(skills))
+    rows = list(await db.scalars(stmt))
+    if grade:
+        near = [p for p in rows if grade - 2 <= p.grade <= grade + 1]
+        rows = near or rows
+    random.shuffle(rows)  # mỗi lần ra đề một khác; sắp xếp sau giữ thứ tự ngẫu nhiên trong cùng nhóm
+    return sorted(rows, key=lambda p: (p.school_id != school_id if school_id else False, p.grade if not grade else abs(p.grade - grade)))
 
 
 async def bank_index(db: AsyncSession) -> dict[str, str]:

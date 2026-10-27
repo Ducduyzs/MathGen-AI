@@ -21,7 +21,8 @@ async def register(db: AsyncSession, body: RegisterIn) -> User:
     email = body.email.lower()
     if await db.scalar(select(User.id).where(User.email == email)):
         raise ApiError(409, "email_taken")
-    user = User(email=email, password_hash=hash_password(body.password), full_name=body.full_name.strip(), role=body.role, grade=body.grade)
+    user = User(email=email, password_hash=hash_password(body.password), full_name=body.full_name.strip(), role=body.role, grade=body.grade,
+                province_code=body.province_code)
     db.add(user)
     await db.flush()
     return user

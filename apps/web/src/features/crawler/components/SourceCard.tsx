@@ -37,6 +37,8 @@ export function SourceCard({ source: s }: { source: CrawlSource }) {
           <p className="truncate text-sm text-muted">
             {s.domain}
             {s.include_paths.length ? ` · ${s.include_paths.join(", ")}` : ""} · lớp {s.grade_min}–{s.grade_max}
+            {s.province_name ? ` · ${s.province_name}` : ""}
+            {s.school_name ? ` · ${s.school_name}` : ""}
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             <Badge tone="success">{s.license_label}</Badge>

@@ -17,6 +17,8 @@ class User(Timestamped, Base):
     full_name: Mapped[str] = mapped_column(String(120))
     role: Mapped[str] = mapped_column(String(16), default="student")
     grade: Mapped[int | None] = mapped_column(Integer)
+    # Tỉnh/thành (đơn vị hành chính mới): gợi ý đề theo khu vực
+    province_code: Mapped[str | None] = mapped_column(String(32))
 
 
 class RefreshToken(Timestamped, Base):

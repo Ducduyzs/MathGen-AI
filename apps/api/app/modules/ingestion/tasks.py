@@ -10,6 +10,7 @@ from app.modules.ingestion.pipeline.extract import ExtractError, clean, extract_
 from app.modules.ingestion.pipeline.split import split_questions
 from app.modules.ingestion.pipeline.sympy_check import verify
 from app.modules.problem_bank import service as bank
+from app.modules.regions import service as regions
 from app.workers.celery_app import celery
 from app.workers.db import SyncSession
 
@@ -46,6 +47,8 @@ def process_source(source_id: str) -> str:
         if not text.strip():
             _fail(db, src, 1, "Không có nội dung để phân tích.")
             return "failed"
+        # Tỉnh, trường, kỳ thi, năm học ghi ở phần đầu đề (nếu có)
+        src.region = regions.detect(src.name, text).as_dict()
         src.progress = 2
         db.commit()
 

@@ -2,6 +2,7 @@ import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { GRADES } from "@/lib/grades";
+import { PROVINCES_SORTED } from "@/lib/regions";
 import { DIFFICULTY_LEVELS } from "@/lib/utils";
 import type { Skill } from "@/types/api";
 import type { ProblemQuery } from "../api";
@@ -13,7 +14,7 @@ export function ProblemFilters({ skills, value }: { skills: Skill[]; value: Prob
     <form
       action="/problems"
       method="get"
-      className="grid gap-3 rounded-2xl border border-line bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1fr_8.5rem_12rem_10rem_auto]"
+      className="grid gap-3 rounded-2xl border border-line bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1fr_9.5rem_11rem_10rem_10.5rem_auto]"
     >
       <div className="relative">
         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" aria-hidden />
@@ -40,6 +41,14 @@ export function ProblemFilters({ skills, value }: { skills: Skill[]; value: Prob
         {DIFFICULTY_LEVELS.map((l) => (
           <option key={l.level} value={l.level}>
             {l.label}
+          </option>
+        ))}
+      </Select>
+      <Select name="province" defaultValue={value.province ?? ""} aria-label="Tỉnh/thành">
+        <option value="">Mọi tỉnh/thành</option>
+        {PROVINCES_SORTED.map((p) => (
+          <option key={p.code} value={p.code}>
+            Đề {p.name}
           </option>
         ))}
       </Select>

@@ -224,6 +224,7 @@ export interface MockUser {
   full_name: string;
   role: Role;
   grade: number | null;
+  province_code?: string | null;
   /** Phụ huynh mẫu: theo dõi sẵn học sinh có id này. */
   parent_of?: string;
 }

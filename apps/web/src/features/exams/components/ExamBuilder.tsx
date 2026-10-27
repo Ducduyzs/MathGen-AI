@@ -14,6 +14,7 @@ import { useCreateExam, useSkills } from "../api";
 import { useAuth } from "@/features/auth";
 import { skillInStage } from "@/lib/grades";
 import { EXAM_SIZES, MINUTES_PER_QUESTION } from "../model";
+import { RegionPicker, type RegionValue } from "./RegionPicker";
 
 const MODES: { mode: ExamMode; icon: LucideIcon; title: string; text: string }[] = [
   { mode: "choice", icon: ListChecks, title: "Trắc nghiệm", text: "Phần I chọn A/B/C/D, Phần II chọn Đúng/Sai cho từng ý a, b, c, d." },
@@ -30,6 +31,8 @@ export function ExamBuilder() {
   const [mode, setMode] = useState<ExamMode>("choice");
   const [size, setSize] = useState(20);
   const [picked, setPicked] = useState<string[]>([]);
+  // Mặc định theo tỉnh của học sinh (nếu đã khai báo khi đăng ký)
+  const [region, setRegion] = useState<RegionValue>({ province: user?.province_code ?? "", school: "" });
 
   function changeMode(m: ExamMode) {
     setMode(m);
@@ -100,6 +103,8 @@ export function ExamBuilder() {
         </div>
       </section>
 
+      <RegionPicker value={region} onChange={setRegion} />
+
       <div className="flex flex-wrap items-center gap-4 border-t border-line pt-5">
         <p className="mr-auto flex items-center gap-2 text-sm text-muted">
           <Clock className="size-4 text-brand-500" aria-hidden /> Thời gian gợi ý khoảng <strong className="text-ink">{minutes} phút</strong>
@@ -110,7 +115,13 @@ export function ExamBuilder() {
           loading={create.isPending}
           onClick={() =>
             create.mutate(
-              { mode, size, skills: picked.length ? picked : undefined },
+              {
+                mode,
+                size,
+                skills: picked.length ? picked : undefined,
+                province: region.province || undefined,
+                school_id: region.school || undefined,
+              },
               { onSuccess: (exam) => router.push(`/exams/${exam.id}`) },
             )
           }

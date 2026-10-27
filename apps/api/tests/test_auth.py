@@ -7,7 +7,7 @@ async def test_dang_ky_refresh_dang_xuat(client):
     r = await client.post("/api/auth/register", json={"full_name": "Lê Văn Bình", "email": "Binh@Example.com", "password": "matkhau1", "grade": 8})
     assert r.status_code == 200, r.text
     body = r.json()
-    assert body["user"] == {"id": body["user"]["id"], "email": "binh@example.com", "full_name": "Lê Văn Bình", "role": "student", "grade": 8}
+    assert body["user"] == {"id": body["user"]["id"], "email": "binh@example.com", "full_name": "Lê Văn Bình", "role": "student", "grade": 8, "province_code": None}
     assert "refresh_token" in r.cookies and "httponly" in r.headers["set-cookie"].lower()
 
     me = await client.get("/api/me", headers={"Authorization": f"Bearer {body['access_token']}"})

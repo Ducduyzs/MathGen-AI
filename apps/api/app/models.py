@@ -10,6 +10,7 @@ from app.modules.ingestion.models import GeneratedVariant, IngestionSource, Uplo
 from app.modules.learning.models import Attempt, DailyActivity, RewardProfile, SkillScore, UserBadge
 from app.modules.problem_bank.models import Problem, ReviewItem, Skill
 from app.modules.problem_sets.models import ProblemSet
+from app.modules.regions.models import School
 from app.modules.users.models import RefreshToken, User
 
-__all__ = ["Base", "ArenaRating", "ArenaRun", "LinkCode", "ParentLink", "Assignment", "ClassMember", "Classroom", "CrawlJob", "CrawlPage", "CrawlSource", "Exam", "ExamQuestion", "GeneratedVariant", "IngestionSource", "Upload", "Attempt", "DailyActivity", "RewardProfile", "SkillScore", "UserBadge", "Problem", "ReviewItem", "Skill", "ProblemSet", "RefreshToken", "User"]
+__all__ = ["Base", "ArenaRating", "ArenaRun", "LinkCode", "ParentLink", "Assignment", "ClassMember", "Classroom", "CrawlJob", "CrawlPage", "CrawlSource", "Exam", "ExamQuestion", "GeneratedVariant", "IngestionSource", "Upload", "Attempt", "DailyActivity", "RewardProfile", "SkillScore", "UserBadge", "Problem", "ReviewItem", "Skill", "ProblemSet", "School", "RefreshToken", "User"]

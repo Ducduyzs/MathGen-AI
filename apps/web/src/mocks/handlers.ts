@@ -43,6 +43,7 @@ import { handleFamily } from "./family-handlers";
 import { handleIngestion, handleStorageUpload } from "./ingestion-handlers";
 import { handleProblemSets, setSource } from "./problem-set-handlers";
 import { recordRewards, rewardsOf } from "./rewards-handlers";
+import { PROVINCES } from "@/lib/regions";
 import { THPT_BLUEPRINT } from "./thpt-templates";
 
 export const EXAM_SIZES: Record<ExamMode, number[]> = { choice: [10, 20, 40, 100], written: [5, 10, 20, 40] };
@@ -463,6 +464,7 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
       full_name: b.full_name,
       role,
       grade: role === "student" ? (b.grade ?? null) : null,
+      province_code: b.province_code ?? null,
     };
     s.users.push(u);
     return session(u);
@@ -477,6 +479,9 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
 
   // ---- Công khai
   if (route === "GET /skills") return json(SKILLS);
+  // Mock không có đề thật thu thập: mọi tỉnh 0 câu, 0 trường (đề theo khu vực sẽ toàn câu tự sinh)
+  if (route === "GET /regions") return json(PROVINCES.map((p) => ({ ...p, problems: 0, schools: 0 })));
+  if (req.method === "GET" && path[0] === "regions" && path[2] === "schools") return json([]);
   if (route === "GET /problems") {
     const gradeQ = url.searchParams.get("grade");
     const skillQ = url.searchParams.get("skill");

@@ -22,6 +22,7 @@ from app.modules.exams.schemas import (
 from app.modules.learning import service as learning
 from app.modules.learning.grading import same_number
 from app.modules.problem_bank import service as bank
+from app.modules.regions import service as regions
 from app.modules.problem_bank.schemas import SkillOut
 from app.modules.users.models import User
 
@@ -112,6 +113,42 @@ async def _out(db: AsyncSession, exam: Exam, qs: list[ExamQuestion]) -> ExamOut:
     )
 
 
+BANK_TEMPLATE = "bank"
+
+
+def _from_problem(p, place: str, skill_names: dict[str, str]) -> dict:
+    """Câu thật trong ngân hàng → một dòng câu hỏi của đề (cùng định dạng với câu sinh từ dạng bài)."""
+    return {
+        "type": p.answer_type, "template_code": BANK_TEMPLATE, "template_name": f"Đề thật · {place}", "skill_code": p.skill_code,
+        "grade": p.grade, "difficulty": p.difficulty, "statement": p.statement, "choices": p.choices, "statements": None,
+        "answer_prefix": p.answer_prefix, "answer": p.answer, "answer_display": p.answer_display, "solution": p.solution, "tolerance": None,
+    }
+
+
+async def region_rows(db: AsyncSession, user: User, body: CreateExamIn) -> tuple[str, list[dict], str]:
+    """Đề theo khu vực: câu thật của trường / tỉnh trước, thiếu thì bổ sung câu sinh từ dạng bài cùng cấp học."""
+    regions.check_province(body.province)
+    if body.mode is None or body.size not in EXAM_SIZES[body.mode]:
+        raise ApiError(422, "validation_error")
+    school = await regions.get_school(db, body.school_id) if body.school_id else None
+    if body.school_id and (not school or school.province_code != body.province):
+        raise ApiError(422, "unknown_school")
+    place = school.name if school else regions.province_name(body.province)
+    pool = await bank.region_pool(db, body.province, school.id if school else None, "choice" if body.mode == "choice" else "number",
+                                  body.skills, user.grade)
+    names = await bank.skill_names(db)
+    rows = [_from_problem(p, place, names) for p in pool[: body.size]]
+    missing = body.size - len(rows)
+    if missing:
+        built = build_questions(body.mode, missing, Rng(), skills=body.skills, grade=user.grade)
+        rows += [_from_generated(t.code, q) for t, q in built or []]
+    if not rows:
+        raise ApiError(422, "no_template")
+    rows.sort(key=lambda r: r["difficulty"])
+    real = len(pool[: body.size])
+    return body.mode, rows, f"Đề khu vực {place} · {len(rows)} câu ({real} câu đề thật)"
+
+
 async def create(db: AsyncSession, user: User, body: CreateExamIn) -> ExamOut:
     kind, duration = "practice", None
     if body.kind == "official":
@@ -128,6 +165,8 @@ async def create(db: AsyncSession, user: User, body: CreateExamIn) -> ExamOut:
         if not rows:
             raise ApiError(422, "validation_error")
         mode, title = orig.mode, f"Làm lại {len(rows)} câu sai"
+    elif body.province:
+        mode, rows, title = await region_rows(db, user, body)
     else:
         mode, rows = generate_rows(kind, body.mode, body.size, body.skills, body.templates, grade=user.grade)
         label = "Ôn dạng đã sai" if body.templates else "Đề ôn tập trắc nghiệm" if mode == "choice" else "Đề ôn tập tự luận"
@@ -241,7 +280,8 @@ def grade_exam(exam: Exam, qs: list[ExamQuestion], answers: dict[str, dict], now
     else:
         # Đề ôn tập: các câu bằng điểm nhau, quy về thang 10
         score = round2(sum(pts, Fraction(0)) / len(qs) * 10)
-    wrong = {q.template_code: TemplateRef(code=q.template_code, name=q.template_name) for q, p in zip(qs, pts) if p != 1}
+    # Câu thật của ngân hàng (đề theo khu vực) không thuộc dạng bài sinh được nên không vào "ôn dạng đã sai"
+    wrong = {q.template_code: TemplateRef(code=q.template_code, name=q.template_name) for q, p in zip(qs, pts) if p != 1 and q.template_code in BY_CODE}
     return ExamResult(correct=sum(p == 1 for p in pts), total=len(qs), score=score, parts=parts, items=items,
                       wrong_templates=list(wrong.values()), submitted_at=now)
 

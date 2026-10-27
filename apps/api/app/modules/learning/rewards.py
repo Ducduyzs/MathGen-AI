@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.learning.models import DailyActivity, RewardProfile, SkillScore, UserBadge
 from app.modules.learning.schemas import BadgeOut, CalendarDay, QuestOut, RewardsOut
 
-Kind = Literal["practice", "exam", "arena"]
+Kind = Literal["practice", "exam", "arena", "game"]
 
 XP_CORRECT, XP_HINTED, XP_TRIED = 10, 5, 2  # làm sai vẫn có chút XP: khuyến khích thử, không phạt
 XP_GOAL = 20

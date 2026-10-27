@@ -693,3 +693,47 @@ export interface Rewards {
   badges: BadgeInfo[];
   calendar: CalendarDay[];
 }
+
+// ---- Bàn tròn vũ trụ: 4 người một bàn, sai thì quay vòng hố đen
+
+export type TablePhase = "lobby" | "question" | "reveal" | "finished";
+
+export interface TableLastResult {
+  correct: boolean;
+  points: number;
+  spun: boolean;
+  hit: boolean;
+}
+
+export interface TablePlayer {
+  seat: number;
+  name: string;
+  is_bot: boolean;
+  is_me: boolean;
+  is_host: boolean;
+  score: number;
+  correct: number;
+  alive: boolean;
+  /** Số lần đã quay vòng: lần kế tiếp trúng hố đen với xác suất 1 / (chambers − spins). */
+  spins: number;
+  answered: boolean;
+  last?: TableLastResult;
+  out_round?: number;
+}
+
+export interface TableRoom {
+  code: string;
+  pool: ArenaPool;
+  rounds: number;
+  chambers: number;
+  phase: TablePhase;
+  round: number;
+  answer_seconds: number;
+  now: string;
+  deadline?: string;
+  question?: ExamQuestion;
+  reveal?: { answer_display: string; solution: string[]; my_answer?: ExamAnswer };
+  players: TablePlayer[];
+  my_seat: number;
+  winners: number[];
+}

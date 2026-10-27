@@ -56,6 +56,7 @@ app/
 │   ├── classroom/      lớp học (mã vào lớp), giao bài có hạn nộp / đảo câu, báo cáo lớp, bảng xếp hạng
 │   ├── problem_sets/   bộ đề giáo viên soạn: chọn câu theo dạng bài, đổi số liệu, sắp xếp, nhân bản, giao cho lớp
 │   ├── arena/          Đấu trường: trả lời nhanh 5/15/30 phút, thưởng chuỗi đúng, bảng xếp hạng tuần
+│   ├── round_table/    Bàn tròn vũ trụ: 4 người một bàn (ghế trống có máy), sai thì quay vòng hố đen, trạng thái trong Redis
 │   ├── family/         phụ huynh: mã liên kết (một lần, 24 giờ), xem tiến độ / bài lớp giao / đề đã làm của con
 │   └── ingestion/      tải đề (link ký sẵn), pipeline 5 bước trong worker, sinh biến thể có kiểm chứng
 │       └── pipeline/   phân tích biểu thức → nhận dạng 9 dạng → giải chính xác → dạng chuẩn chống trùng → SymPy kiểm chứng
@@ -89,6 +90,9 @@ tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, 
 - **Phần thưởng** (`learning/rewards.py`): mọi hoạt động (luyện tập, đề, Đấu trường) đi qua `learning.record_activity` trong cùng
   giao dịch, cộng XP, chấm nhiệm vụ ngày (3 nhiệm vụ cố định theo học sinh + ngày) và huy hiệu. Ngày nghỉ được đóng băng
   khi ghi hoạt động kế tiếp; các API chỉ đọc tự tính như đã đóng băng nên không phải ghi gì.
+- **Bàn tròn vũ trụ:** trạng thái phòng là JSON trong Redis (TTL 3 giờ), mọi thay đổi chạy dưới khóa Redis của phòng.
+  Không có tiến trình nền: mỗi request tự đẩy ván tới thời điểm hiện tại, client hỏi lại mỗi giây. Ô hố đen của từng người
+  được chọn sẵn và chỉ nằm ở server; hết ván mới ghi các câu của người thật vào `learning.record_activity`.
 - **Bộ đề → bài giao** là bản chụp: sửa bộ đề sau khi giao không đổi bài học sinh đang làm.
 - **Chống trùng:** khóa dạng chuẩn (quy đồng, chia ước chung, hệ số đầu dương) → SHA-256, lưu ở `problems.canonical_hash` (UNIQUE).
 
@@ -102,6 +106,7 @@ tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, 
 | M3.5 | Lớp học & giao bài (`/api/classes`, `/api/assignments`, `/api/me/assignments`): mã vào lớp, hạn nộp, đảo câu, báo cáo từng câu / kỹ năng, xuất bảng điểm, bảng xếp hạng | ✅ |
 | M3.6 | Bộ đề (`/api/problem-sets`, in đề kèm đáp án ở frontend), Đấu trường (`/api/arena`), tài khoản phụ huynh (`/api/children`, `/api/me/parent-code`) | ✅ |
 | M3.7 | Phần thưởng kiểu Duolingo (`/api/me/rewards`): XP, nhiệm vụ hằng ngày, đóng băng chuỗi, 12 huy hiệu | ✅ |
+| M3.8 | Bàn tròn vũ trụ (`/api/round-table`): chế độ 4 người, cảnh 3D (three.js) ở frontend | ✅ |
 | M4 | OCR ảnh/PDF scan (Mathpix/Pix2Text), lưu file trên R2, mô hình phân loại thay luật nhận dạng | chưa |
 
 **Hạn chế hiện tại:** ảnh và PDF scan báo lỗi "cần OCR". Biến thể dạng "giữ như đề gốc" có đáp án là tập nghiệm của bất phương trình hoặc biểu thức

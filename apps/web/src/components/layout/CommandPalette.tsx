@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { ClipboardList, CornerDownLeft, FileStack, GraduationCap, Library, Search, Sparkles, Swords, Target, Users } from "lucide-react";
+import { ClipboardList, CornerDownLeft, FileStack, GraduationCap, Library, Orbit, Search, Sparkles, Swords, Target, Users } from "lucide-react";
 import { useAuth } from "@/features/auth";
 import { dueLabel, isOpen, useClasses, useMyAssignments } from "@/features/classroom";
 import { useSkills } from "@/features/exams";
@@ -39,6 +39,7 @@ const ACTIONS: Partial<Record<Role, Omit<Entry, "group">[]>> = {
   student: [
     { id: "a:thpt", label: "Làm đề thi tốt nghiệp THPT", icon: GraduationCap, href: "/exams", keywords: "de thi thpt quoc gia" },
     { id: "a:arena", label: "Vào Đấu trường", hint: "5 · 15 · 30 phút", icon: Swords, href: "/arena", keywords: "thi dau xep hang" },
+    { id: "a:table", label: "Bàn tròn vũ trụ", hint: "4 người · 3D", icon: Orbit, href: "/arena/table", keywords: "ho den choi cung ban 3d game" },
     { id: "a:daily", label: "Luyện tập theo hồ sơ năng lực", icon: Sparkles, href: "/practice", keywords: "lam bai goi y" },
   ],
   teacher: [{ id: "a:set", label: "Soạn bộ đề mới", icon: FileStack, href: "/teacher/problem-sets", keywords: "tao de kiem tra" }],

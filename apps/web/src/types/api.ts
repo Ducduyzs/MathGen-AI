@@ -126,7 +126,8 @@ export interface ReviewItem {
   classification_confidence: number;
   parent?: { id: string; statement: string };
   transform?: string;
-  source?: { name: string; page: number };
+  /** Nguồn gốc: file tải lên (trang) hoặc trang web bộ gom lấy về (URL, giấy phép). */
+  source?: { name: string; page?: number; url?: string; site?: string; license?: string };
   choices?: Choice[];
   checks: VerificationCheck[];
 }
@@ -299,7 +300,7 @@ export interface IngestionStats {
 export interface IngestionSource {
   id: string;
   name: string;
-  origin: "file" | "text";
+  origin: "file" | "text" | "crawl";
   status: "processing" | "done" | "failed";
   steps: IngestionStep[];
   created_at: string;
@@ -311,7 +312,7 @@ export interface IngestionSource {
 export interface IngestionSourceSummary {
   id: string;
   name: string;
-  origin: "file" | "text";
+  origin: "file" | "text" | "crawl";
   status: IngestionSource["status"];
   created_at: string;
   stats: IngestionStats;
@@ -775,4 +776,81 @@ export interface TableRoom {
   players: TablePlayer[];
   my_seat: number;
   winners: number[];
+}
+
+// ---- Bộ gom đề từ nguồn được phép (chỉ quản trị viên)
+
+export type CrawlLicense = "government" | "public_domain" | "cc0" | "cc_by" | "cc_by_sa" | "permission";
+export type CrawlJobStatus = "queued" | "running" | "done" | "failed" | "cancelled";
+
+export interface CrawlJobSummary {
+  id: string;
+  status: CrawlJobStatus;
+  pages_fetched: number;
+  documents: number;
+  questions: number;
+  submitted: number;
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+  error: string | null;
+}
+
+export interface CrawlSource {
+  id: string;
+  name: string;
+  domain: string;
+  start_urls: string[];
+  include_paths: string[];
+  license: CrawlLicense;
+  license_label: string;
+  permission_note: string | null;
+  terms_url: string | null;
+  grade_min: number;
+  grade_max: number;
+  max_pages: number;
+  max_depth: number;
+  delay_seconds: number;
+  status: "active" | "paused";
+  created_at: string;
+  last_job: CrawlJobSummary | null;
+}
+
+export interface CreateCrawlSourceRequest {
+  name: string;
+  start_urls: string[];
+  include_paths: string[];
+  license: CrawlLicense;
+  permission_note?: string;
+  terms_url?: string;
+  grade_min: number;
+  grade_max: number;
+  max_pages: number;
+  max_depth: number;
+  delay_seconds: number;
+  confirm: true;
+}
+
+export interface RobotsCheck {
+  url: string;
+  allowed: boolean;
+  reason: string | null;
+  crawl_delay: number | null;
+}
+
+export interface CrawlPageResult {
+  url: string;
+  status: "fetched" | "unchanged" | "no_questions" | "blocked" | "error";
+  http_status: number | null;
+  title: string | null;
+  questions: number;
+  submitted: number;
+  ingestion_source_id: string | null;
+  error: string | null;
+  fetched_at: string;
+}
+
+export interface CrawlJob extends CrawlJobSummary {
+  source_id: string;
+  pages: CrawlPageResult[];
 }

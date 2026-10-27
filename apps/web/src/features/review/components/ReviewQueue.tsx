@@ -167,7 +167,17 @@ function OriginPanel({ item }: { item: ReviewItem }) {
           {item.source && (
             <p className="mt-3 rounded-xl bg-surface p-4 text-sm">
               <span className="font-medium text-ink">{item.source.name}</span>
-              <span className="text-muted"> · trang {item.source.page}</span>
+              {item.source.page != null && <span className="text-muted"> · trang {item.source.page}</span>}
+              {item.source.url && (
+                <>
+                  <br />
+                  {/* Bài do bộ gom lấy về: luôn kèm đường dẫn gốc và giấy phép để người duyệt kiểm tra */}
+                  <a href={item.source.url} target="_blank" rel="noreferrer noopener" className="break-all text-brand-700 hover:underline">
+                    {item.source.url}
+                  </a>
+                  {item.source.license && <span className="text-muted"> · Giấy phép: {item.source.license}</span>}
+                </>
+              )}
             </p>
           )}
         </section>

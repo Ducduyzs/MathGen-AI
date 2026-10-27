@@ -56,6 +56,7 @@ app/
 │   ├── classroom/      lớp học (mã vào lớp), giao bài có hạn nộp / đảo câu, báo cáo lớp, bảng xếp hạng
 │   ├── problem_sets/   bộ đề giáo viên soạn: chọn câu theo dạng bài, đổi số liệu, sắp xếp, nhân bản, giao cho lớp
 │   ├── arena/          Đấu trường: làm đề tính giờ 5/15/30 phút, rank Đồng → Cao thủ, bảng điểm cao tuần
+│   ├── crawler/        bộ gom đề từ nguồn được phép: robots.txt, phạm vi tên miền/thư mục, đưa vào pipeline tải đề → hàng chờ duyệt
 │   ├── round_table/    Bàn tròn vũ trụ: 4 người một bàn (ghế trống có máy), sai thì quay vòng hố đen, trạng thái trong Redis
 │   ├── family/         phụ huynh: mã liên kết (một lần, 24 giờ), xem tiến độ / bài lớp giao / đề đã làm của con
 │   └── ingestion/      tải đề (link ký sẵn), pipeline 5 bước trong worker, sinh biến thể có kiểm chứng
@@ -93,6 +94,11 @@ tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, 
 - **Lớp 1–12:** kỹ năng có khoảng lớp (`skills.grade_min/grade_max`). Không chọn chủ đề thì đề ôn tập, luyện tập tự chọn chỉ lấy
   nội dung cùng cấp học với học sinh; tiểu học còn giới hạn tới lớp trên kế tiếp (lớp 2 không gặp phân số lớp 4).
   Ngân hàng có sẵn 10 bài/dạng tiểu học do seed sinh với hạt giống cố định (`g_<mã dạng>_<số>`).
+- **Bộ gom** (`crawler/`): chỉ chạy với nguồn quản trị viên đã khai báo giấy phép (đề thi cơ quan nhà nước, CC0/CC BY/CC BY-SA,
+  phạm vi công cộng, hoặc có văn bản cho phép kèm bằng chứng). Worker `ingest` đi BFS trong tên miền + thư mục đã khai báo, tuân thủ
+  robots.txt (RFC 9309), Crawl-delay, thẻ noindex, tự xưng danh `MathGenBot`, chặn địa chỉ nội bộ (kể cả qua chuyển hướng), giới hạn
+  20 MB/tài liệu. Trang HTML / PDF / DOCX có từ 2 câu đánh số → pipeline tải đề; câu nhận dạng + kiểm chứng đủ, không trùng ngân hàng
+  hay hàng chờ → hàng chờ duyệt với `source = {name, url, site, license}`. Nội dung không đổi thì lần sau bỏ qua (băm nội dung).
 - **Rank Đấu trường** (`arena/ranks.py`): một bảng rank chung; lượt từ 3 câu được cộng/trừ theo điểm/phút so với mức
   chuẩn của bậc hiện tại (lượt dài tính nặng hơn), ghi `arena_runs.rank_delta` một lần khi lượt kết thúc.
 - **Bàn tròn vũ trụ:** trạng thái phòng là JSON trong Redis (TTL 3 giờ), mọi thay đổi chạy dưới khóa Redis của phòng.
@@ -114,6 +120,7 @@ tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, 
 | M3.9 | Rank Đấu trường (`/api/arena/ranking`); Bàn tròn vũ trụ chuyển sang khu Trò chơi (`/games`) | ✅ |
 | M3.8 | Bàn tròn vũ trụ (`/api/round-table`): chế độ 4 người, cảnh 3D (three.js) ở frontend | ✅ |
 | M3.10 | Mở rộng lớp 1–5: 8 kỹ năng, 20 dạng bài, kho Đấu trường / Bàn tròn "Tiểu học" | ✅ |
+| M3.11 | Bộ gom đề từ nguồn được phép (`/api/crawler`, trang quản trị Nguồn dữ liệu) | ✅ |
 | M4 | OCR ảnh/PDF scan (Mathpix/Pix2Text), lưu file trên R2, mô hình phân loại thay luật nhận dạng | chưa |
 
 **Hạn chế hiện tại:** ảnh và PDF scan báo lỗi "cần OCR". Biến thể dạng "giữ như đề gốc" có đáp án là tập nghiệm của bất phương trình hoặc biểu thức

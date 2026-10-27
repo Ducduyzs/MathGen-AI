@@ -36,3 +36,4 @@ def require_roles(*roles: str):
 Teacher = Annotated[User, Depends(require_roles("teacher", "admin"))]
 Student = Annotated[User, Depends(require_roles("student"))]
 Parent = Annotated[User, Depends(require_roles("parent"))]
+Admin = Annotated[User, Depends(require_roles("admin"))]

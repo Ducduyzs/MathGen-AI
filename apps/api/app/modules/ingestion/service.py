@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.core.errors import ApiError
 from app.core.ids import new_id
@@ -176,3 +177,40 @@ async def submit_variants(db: AsyncSession, user: User, body: SubmitVariantsIn) 
     added = await bank.add_review_items(db, items)
     await db.commit()
     return added
+
+
+# ---------------------------------------------------------------- bộ gom (worker, phiên đồng bộ)
+
+def _review_row(item: dict, provenance: dict) -> dict:
+    """Câu gốc đã nhận dạng → bài chờ duyệt, ghi rõ nguồn (URL, giấy phép) để giáo viên kiểm tra trước khi đưa vào ngân hàng."""
+    checks = list(item["checks"])
+    answer = {"type": "choice", "value": item["matched_choice"]} if item.get("matched_choice") else None
+    if not answer:
+        checks.append({"label": "Đáp án dạng tập nghiệm / biểu thức: chưa chấm tự động được", "passed": False})
+    return {
+        "origin": "extracted", "statement": item["statement"], "answer_display": item["answer_display"], "solution": item["solution"],
+        "grade": item["grade"], "skill_code": item["skill"]["code"], "difficulty": item["difficulty"],
+        "classification_confidence": item["confidence"], "parent": None, "transform": None, "source": provenance,
+        "choices": item["choices"] or None, "checks": checks, "answer": answer, "answer_prefix": None,
+        "canonical_hash": item["structure"]["hash"],
+    }
+
+
+def ingest_crawled_sync(db: Session, user_id: str, name: str, text: str, provenance: dict) -> tuple[str, int, int]:
+    """Văn bản bộ gom lấy về → tài liệu (origin "crawl") → pipeline 5 bước → câu nhận dạng & kiểm chứng đủ thì vào hàng chờ duyệt.
+
+    Trả về (mã tài liệu, số câu tách được, số câu đã gửi duyệt). Commit trong hàm.
+    """
+    src = IngestionSource(user_id=user_id, name=name[:200], origin="crawl", text=text, items=[], created_at=datetime.now(UTC))
+    db.add(src)
+    db.commit()
+    tasks.process_source(src.id)  # chạy luôn trong worker hiện tại (đã ở hàng đợi ingest)
+    db.refresh(src)
+    good = [i for i in src.items if i["status"] == "recognized" and not i["duplicate_of"]
+            and all(c["passed"] for c in i["checks"] if not c["label"].startswith("Không phương án"))]
+    good = [i for i in good if i.get("matched_choice") or not i["choices"]]  # trắc nghiệm phải khớp được đáp án
+    seen = bank.pending_hashes_sync(db, [i["structure"]["hash"] for i in good])
+    rows = [_review_row(i, provenance) for i in good if i["structure"]["hash"] not in seen]
+    bank.add_review_items_sync(db, rows)
+    db.commit()
+    return src.id, len(src.items), len(rows)

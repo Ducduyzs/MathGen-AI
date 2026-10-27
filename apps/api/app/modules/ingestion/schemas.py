@@ -74,7 +74,7 @@ class StatsOut(BaseModel):
 class SourceSummaryOut(BaseModel):
     id: str
     name: str
-    origin: Literal["file", "text"]
+    origin: Literal["file", "text", "crawl"]
     status: Literal["processing", "done", "failed"]
     created_at: datetime
     stats: StatsOut

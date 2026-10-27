@@ -49,7 +49,7 @@ const TEACHER: NavItem[] = [
 const PARENT: NavItem[] = [{ href: "/parent", label: "Con của tôi", icon: HeartHandshake }];
 
 const ADMIN: NavItem[] = [
-  { href: "/admin/sources", label: "Nguồn dữ liệu", icon: Database, soon: true },
+  { href: "/admin/sources", label: "Nguồn dữ liệu", icon: Database },
   { href: "/admin/users", label: "Người dùng", icon: UserCog, soon: true },
   { href: "/admin/quality", label: "Chất lượng", icon: Gauge, soon: true },
 ];

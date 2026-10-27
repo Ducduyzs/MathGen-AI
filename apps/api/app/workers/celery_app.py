@@ -9,7 +9,7 @@ from celery import Celery
 from app.core.config import get_settings
 
 s = get_settings()
-celery = Celery("mathgen", broker=s.redis_url, include=["app.modules.learning.tasks", "app.modules.ingestion.tasks"])
+celery = Celery("mathgen", broker=s.redis_url, include=["app.modules.learning.tasks", "app.modules.ingestion.tasks", "app.modules.crawler.tasks"])
 celery.conf.update(
     task_always_eager=s.celery_eager,  # dev/test: chạy ngay trong tiến trình, không cần worker
     task_eager_propagates=True,

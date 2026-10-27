@@ -641,6 +641,13 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
   });
   if (ingestion) return ingestion;
 
+  // ---- Bộ gom: cần backend thật (tải trang web, robots.txt, worker); mock chỉ trả danh sách rỗng
+  if (path[0] === "crawler") {
+    if (user.role !== "admin") return fail(403, "forbidden");
+    if (req.method === "GET" && path[1] === "sources" && path.length === 2) return json([]);
+    return fail(501, "mock_unsupported");
+  }
+
   // ---- Giáo viên / quản trị
   if (route === "GET /review/queue" || route.startsWith("POST /review/")) {
     if (user.role === "student") return fail(403, "forbidden");

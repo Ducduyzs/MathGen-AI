@@ -6,6 +6,7 @@ from app.core.errors import install_handlers
 from app.core.redis import get_redis
 from app.modules.arena.router import router as arena
 from app.modules.classroom.router import router as classroom
+from app.modules.crawler.router import router as crawler
 from app.modules.exams.router import router as exams
 from app.modules.family.router import router as family
 from app.modules.ingestion.router import router as ingestion
@@ -21,7 +22,7 @@ def create_app() -> FastAPI:
     install_handlers(app)
 
     api = APIRouter(prefix="/api")
-    for r in (users, problem_bank, learning, exams, ingestion, classroom, problem_sets, arena, family, round_table):
+    for r in (users, problem_bank, learning, exams, ingestion, classroom, problem_sets, arena, family, round_table, crawler):
         api.include_router(r)
 
     @api.get("/health", tags=["ops"])

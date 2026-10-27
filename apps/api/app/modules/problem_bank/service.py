@@ -127,6 +127,19 @@ async def add_review_items(db: AsyncSession, rows: list[dict]) -> int:
     return len(rows)
 
 
+def add_review_items_sync(db: Session, rows: list[dict]) -> int:
+    """Như add_review_items, cho worker (bộ gom)."""
+    db.add_all(ReviewItem(status="pending", **r) for r in rows)
+    return len(rows)
+
+
+def pending_hashes_sync(db: Session, hashes: list[str]) -> set[str]:
+    """Mã băm đã có trong hàng chờ duyệt (đang chờ) để bộ gom không gửi trùng."""
+    if not hashes:
+        return set()
+    return set(db.scalars(select(ReviewItem.canonical_hash).where(ReviewItem.status == "pending", ReviewItem.canonical_hash.in_(hashes))))
+
+
 async def bank_index(db: AsyncSession) -> dict[str, str]:
     """Chỉ mục chống trùng: mã băm dạng chuẩn → mã bài (bài đã duyệt)."""
     rows = await db.execute(select(Problem.canonical_hash, Problem.id).where(Problem.status == "approved", Problem.canonical_hash.is_not(None)))

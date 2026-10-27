@@ -24,6 +24,8 @@ class Problem(Timestamped, Base):
         CheckConstraint("answer_type in ('choice', 'number', 'set')", name="answer_type"),
         CheckConstraint("status in ('draft', 'verified', 'approved', 'rejected')", name="status"),
         Index("ix_problems_skill_status_difficulty", "skill_code", "status", "difficulty"),
+        # Tìm kiếm đề bài (?q=) bằng trigram; cần extension pg_trgm (tạo ở migration đầu tiên)
+        Index("ix_problems_statement_trgm", "statement", postgresql_using="gin", postgresql_ops={"statement": "gin_trgm_ops"}),
     )
 
     id: Mapped[str] = mapped_column(String(26), primary_key=True, default=new_id)
@@ -64,6 +66,10 @@ class ReviewItem(Timestamped, Base):
     source: Mapped[dict | None] = mapped_column(JSONB)
     choices: Mapped[list | None] = mapped_column(JSONB)
     checks: Mapped[list] = mapped_column(JSONB, default=list)
+    #: Đáp án có cấu trúc để chấm tự động khi bài vào ngân hàng; NULL nếu chỉ chấm được bằng mắt (tập nghiệm, nhân tử)
+    answer: Mapped[dict | None] = mapped_column(JSONB)
+    answer_prefix: Mapped[str | None] = mapped_column(String(80))
+    canonical_hash: Mapped[str | None] = mapped_column(String(64))
     status: Mapped[str] = mapped_column(String(16), default="pending", index=True)
     decided_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

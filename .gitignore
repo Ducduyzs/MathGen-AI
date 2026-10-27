@@ -29,3 +29,6 @@ Thumbs.db
 .vscode/
 .idea/
 ~$*
+
+# File tải lên khi dev (backend lưu cục bộ)
+apps/api/var/

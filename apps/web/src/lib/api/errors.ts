@@ -10,6 +10,7 @@ const MESSAGES: Record<string, string> = {
   file_too_large: "File vượt quá 20 MB.",
   upload_missing: "File chưa tải lên xong. Vui lòng thử lại.",
   empty_text: "Chưa có nội dung đề để phân tích.",
+  duplicate_problem: "Bài này trùng với một bài đã có trong ngân hàng (cùng dạng chuẩn). Hãy từ chối bài.",
   validation_error: "Dữ liệu chưa hợp lệ.",
   network_error: "Không kết nối được máy chủ. Kiểm tra mạng và thử lại.",
 };

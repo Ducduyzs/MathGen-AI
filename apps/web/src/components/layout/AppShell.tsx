@@ -41,7 +41,7 @@ const STUDENT: NavItem[] = [
 
 const TEACHER: NavItem[] = [
   { href: "/teacher/review", label: "Duyệt bài", icon: ClipboardCheck },
-  { href: "/teacher/uploads", label: "Tải tài liệu", icon: Upload, soon: true },
+  { href: "/teacher/uploads", label: "Tải tài liệu", icon: Upload },
   { href: "/teacher/problem-sets", label: "Bộ đề", icon: FileStack, soon: true },
   { href: "/teacher/classes", label: "Lớp học", icon: Users, soon: true },
   { href: "/problems", label: "Ngân hàng bài", icon: Library },

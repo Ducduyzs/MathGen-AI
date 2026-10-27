@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { Check, Clock, ListChecks, PenLine } from "lucide-react";
+import { Clock, ListChecks, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
+import { Chip } from "@/components/ui/chip";
 import { errorMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 import type { ExamMode } from "@/types/api";
@@ -16,24 +17,6 @@ const MODES: { mode: ExamMode; icon: LucideIcon; title: string; text: string }[]
   { mode: "choice", icon: ListChecks, title: "Trắc nghiệm", text: "Phần I chọn A/B/C/D, Phần II chọn Đúng/Sai cho từng ý a, b, c, d." },
   { mode: "written", icon: PenLine, title: "Tự luận", text: "Tự giải rồi điền đáp số (số nguyên, thập phân hoặc phân số)." },
 ];
-
-function Chip({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={selected}
-      className={cn(
-        "inline-flex h-10 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors",
-        "focus-visible:ring-4 focus-visible:ring-brand-100 focus-visible:outline-none",
-        selected ? "border-brand-600 bg-brand-600 text-white" : "border-line bg-white text-ink hover:border-brand-300 hover:bg-brand-50",
-      )}
-    >
-      {selected && <Check className="size-3.5" aria-hidden />}
-      {children}
-    </button>
-  );
-}
 
 export function ExamBuilder() {
   const router = useRouter();

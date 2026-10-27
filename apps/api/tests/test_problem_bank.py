@@ -1,7 +1,11 @@
+from app.seed.__main__ import DATA
+
+
 async def test_ky_nang_va_loc_bai(client):
     assert len((await client.get("/api/skills")).json()) == 11
     all_ = (await client.get("/api/problems")).json()
-    assert all_["total"] == 18
+    # 18 bài mẫu (test khác có thể đã thêm bài duyệt từ biến thể)
+    assert {f"p{i:02d}" for i in range(1, 19)} <= {p["id"] for p in all_["items"]}
     grade9 = (await client.get("/api/problems", params={"grade": 9})).json()["items"]
     assert grade9 and all(p["grade"] == 9 for p in grade9)
     hard = (await client.get("/api/problems", params={"level": 4})).json()["items"]  # Vận dụng cao: độ khó ≥ 0,75
@@ -22,9 +26,10 @@ async def test_bai_cong_khai_khong_lo_dap_an(client):
 async def test_hang_cho_duyet(client, student, teacher):
     assert (await client.get("/api/review/queue", headers=student)).status_code == 403
     queue = (await client.get("/api/review/queue", headers=teacher)).json()
-    assert len(queue) == 4 and {q["origin"] for q in queue} == {"generated", "extracted"}
+    seed_ids = {r["id"] for r in DATA["review_items"]}
+    assert seed_ids <= {q["id"] for q in queue} and {q["origin"] for q in queue} >= {"generated", "extracted"}
 
-    target = queue[0]["id"]
+    target = next(q["id"] for q in queue if q["id"] in seed_ids)
     bad = await client.post(f"/api/review/{target}", json={"decision": "reject"}, headers=teacher)
     assert bad.status_code == 422  # từ chối phải có lý do
     ok = await client.post(f"/api/review/{target}", json={"decision": "reject", "reason": "Trùng bài gốc"}, headers=teacher)

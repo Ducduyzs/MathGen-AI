@@ -87,10 +87,7 @@ async def submit(db: AsyncSession, user: User, body: AttemptIn, idempotency_key:
     attempt = Attempt(user_id=user.id, problem_id=p.id, client_attempt_id=key, answer=answer,
                       is_correct=grade(p.answer, answer), time_ms=body.time_ms, hints_used=body.hints_used)
     db.add(attempt)
-    await db.execute(
-        insert(DailyActivity).values(user_id=user.id, day=today_vn(), count=1)
-        .on_conflict_do_update(index_elements=["user_id", "day"], set_={"count": DailyActivity.count + 1})
-    )
+    await record_activity(db, user.id, 1)
     try:
         await db.commit()
     except IntegrityError:  # hai request cùng khóa chạy song song: bản kia đã ghi trước
@@ -101,6 +98,22 @@ async def submit(db: AsyncSession, user: User, body: AttemptIn, idempotency_key:
     # Sau khi commit mới đẩy task: worker cập nhật điểm kỹ năng (dev/test: chạy ngay trong tiến trình).
     tasks.update_skill_score.delay(user.id, p.skill_code, attempt.is_correct, body.hints_used)
     return _result(attempt, p)
+
+
+async def record_activity(db: AsyncSession, user_id: str, count: int) -> None:
+    """Cộng số bài đã làm hôm nay (giờ Việt Nam). Không commit: người gọi commit cùng giao dịch của mình."""
+    if count <= 0:
+        return
+    await db.execute(
+        insert(DailyActivity).values(user_id=user_id, day=today_vn(), count=count)
+        .on_conflict_do_update(index_elements=["user_id", "day"], set_={"count": DailyActivity.count + count})
+    )
+
+
+def schedule_exam_scores(user_id: str, outcomes: list[tuple[str, bool]]) -> None:
+    """Đẩy task cập nhật điểm kỹ năng sau khi nộp đề. Gọi sau khi đã commit."""
+    if outcomes:
+        tasks.apply_exam_result.delay(user_id, outcomes)
 
 
 def streak(days: dict[date, int], goal: int, today: date) -> int:

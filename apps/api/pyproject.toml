@@ -19,6 +19,7 @@ dependencies = [
   "celery[redis]>=5.4",
   "redis>=5.0",
   "sympy>=1.13",
+  "pypdf>=5",
 ]
 
 [dependency-groups]

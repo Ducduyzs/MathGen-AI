@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.core.errors import ApiError
 from app.modules.problem_bank.models import Problem, ReviewItem, Skill
@@ -90,8 +91,39 @@ async def decide(db: AsyncSession, item_id: str, decision: str, reason: str | No
         raise ApiError(404, "not_found")
     item.status = "approved" if decision == "approve" else "rejected"
     item.decided_by, item.decided_at, item.reason = reviewer_id, datetime.now(UTC), reason
-    # TODO(M3): khi duyệt, chuyển bài (kèm đáp án có cấu trúc từ pipeline SymPy) vào bảng problems.
+    if decision == "approve" and item.answer:
+        # Bài có đáp án chấm được → vào ngân hàng, học sinh luyện được ngay
+        if item.canonical_hash and await db.scalar(select(Problem.id).where(Problem.canonical_hash == item.canonical_hash)):
+            raise ApiError(409, "duplicate_problem")
+        db.add(Problem(
+            statement=item.statement, grade=item.grade, skill_code=item.skill_code, difficulty=item.difficulty,
+            answer_type=item.answer["type"], answer_prefix=item.answer_prefix, choices=item.choices, answer=item.answer,
+            answer_display=item.answer_display, solution=item.solution, canonical_hash=item.canonical_hash,
+            status="approved", origin=item.origin,
+        ))
     await db.commit()
+
+
+async def add_review_items(db: AsyncSession, rows: list[dict]) -> int:
+    """Đưa bài do pipeline trích xuất / sinh vào hàng chờ duyệt. Không commit: người gọi commit cùng giao dịch."""
+    db.add_all(ReviewItem(status="pending", **r) for r in rows)
+    return len(rows)
+
+
+async def bank_index(db: AsyncSession) -> dict[str, str]:
+    """Chỉ mục chống trùng: mã băm dạng chuẩn → mã bài (bài đã duyệt)."""
+    rows = await db.execute(select(Problem.canonical_hash, Problem.id).where(Problem.status == "approved", Problem.canonical_hash.is_not(None)))
+    return {h: pid for h, pid in rows}
+
+
+def bank_index_sync(db: Session) -> dict[str, str]:
+    """Như bank_index, cho worker (phiên đồng bộ)."""
+    rows = db.execute(select(Problem.canonical_hash, Problem.id).where(Problem.status == "approved", Problem.canonical_hash.is_not(None)))
+    return {h: pid for h, pid in rows}
+
+
+def skill_names_sync(db: Session) -> dict[str, str]:
+    return {s.code: s.name for s in db.scalars(select(Skill))}
 
 
 async def count_pending(db: AsyncSession) -> int:

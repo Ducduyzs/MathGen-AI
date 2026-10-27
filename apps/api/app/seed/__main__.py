@@ -18,15 +18,29 @@ from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.core.security import hash_password
 from app.models import DailyActivity, Problem, ReviewItem, Skill, SkillScore, User
+from app.modules.ingestion.pipeline import hash_key, problem_key
 from app.modules.learning.service import today_vn
 
 DATA = json.loads((Path(__file__).parent / "data.json").read_text(encoding="utf-8"))
 
 
+def with_hash(problems: list[dict]) -> list[dict]:
+    """Mã băm dạng chuẩn (chống trùng khi tải đề / sinh biến thể). Bài không nhận dạng được hoặc trùng bài trước thì để trống."""
+    seen: set[str] = set()
+    out = []
+    for p in problems:
+        key = problem_key(p["statement"])
+        h = hash_key(key) if key else None
+        out.append({**p, "canonical_hash": h if h not in seen else None})
+        seen.add(h)
+    return out
+
+
 async def seed(db: AsyncSession, demo: bool) -> dict:
     await db.execute(insert(Skill).values(DATA["skills"]).on_conflict_do_update(index_elements=["code"], set_={"name": insert(Skill).excluded.name, "sort": insert(Skill).excluded.sort}))
-    stmt = insert(Problem).values([{**p, "status": "approved", "origin": "seed"} for p in DATA["problems"]])
-    await db.execute(stmt.on_conflict_do_update(index_elements=["id"], set_={c: stmt.excluded[c] for c in ("statement", "grade", "skill_code", "difficulty", "answer_type", "answer_prefix", "choices", "hints", "answer", "answer_display", "solution")}))
+    stmt = insert(Problem).values([{**p, "status": "approved", "origin": "seed"} for p in with_hash(DATA["problems"])])
+    cols = ("statement", "grade", "skill_code", "difficulty", "answer_type", "answer_prefix", "choices", "hints", "answer", "answer_display", "solution", "canonical_hash")
+    await db.execute(stmt.on_conflict_do_update(index_elements=["id"], set_={c: stmt.excluded[c] for c in cols}))
     # INSERT nhiều dòng cần mọi dòng cùng tập cột: điền None cho trường tùy chọn (parent / source / transform / choices).
     optional = {"parent": None, "source": None, "transform": None, "choices": None}
     await db.execute(insert(ReviewItem).values([{**optional, **r, "status": "pending"} for r in DATA["review_items"]]).on_conflict_do_nothing())

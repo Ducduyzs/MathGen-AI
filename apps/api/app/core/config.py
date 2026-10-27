@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -35,6 +36,8 @@ class Settings(BaseSettings):
     cookie_secure: bool = False
     celery_eager: bool = True
     daily_goal: int = 5
+    #: Thư mục lưu file tải lên khi dev (production: R2/S3)
+    upload_dir: str = str(Path(__file__).resolve().parents[2] / "var" / "uploads")
 
     @property
     def async_database_url(self) -> str:

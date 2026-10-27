@@ -8,7 +8,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "ml:export": "tsx --tsconfig tsconfig.json scripts/export-ml-data.mts",
-    "ml:verify": "tsx --tsconfig tsconfig.json scripts/verify-generations.mts"
+    "ml:verify": "tsx --tsconfig tsconfig.json scripts/verify-generations.mts",
+    "seed:export": "tsx --tsconfig tsconfig.json scripts/export-seed.mts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

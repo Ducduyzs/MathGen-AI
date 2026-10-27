@@ -1,0 +1,38 @@
+# Môi trường dev: chỉ chạy PostgreSQL + Redis; API (uvicorn --reload) và Next.js chạy trực tiếp trên máy.
+#   docker compose -f infra/docker-compose.yml up -d
+name: mathgen-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mathgen
+      POSTGRES_PASSWORD: mathgen
+      POSTGRES_DB: mathgen
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mathgen"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    # volatile-lru: khi đầy chỉ loại key có TTL (cache), không bao giờ loại key hàng đợi Celery
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "volatile-lru"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
+  redisdata:

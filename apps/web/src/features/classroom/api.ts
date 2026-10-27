@@ -24,8 +24,8 @@ export const classKeys = {
 
 const enc = encodeURIComponent;
 
-export function useClasses() {
-  return useQuery({ queryKey: classKeys.list, queryFn: () => apiFetch<ClassRoom[]>("/api/classes") });
+export function useClasses(enabled = true) {
+  return useQuery({ queryKey: classKeys.list, queryFn: () => apiFetch<ClassRoom[]>("/api/classes"), enabled });
 }
 
 export function useClass(id: string) {

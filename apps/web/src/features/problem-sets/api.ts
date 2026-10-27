@@ -11,8 +11,8 @@ export const setKeys = {
 
 const enc = encodeURIComponent;
 
-export function useProblemSets() {
-  return useQuery({ queryKey: setKeys.list, queryFn: () => apiFetch<ProblemSetSummary[]>("/api/problem-sets") });
+export function useProblemSets(enabled = true) {
+  return useQuery({ queryKey: setKeys.list, queryFn: () => apiFetch<ProblemSetSummary[]>("/api/problem-sets"), enabled });
 }
 
 export function useProblemSet(id: string) {

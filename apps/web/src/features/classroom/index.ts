@@ -1,4 +1,4 @@
-export { classKeys, useMyAssignments } from "./api";
+export { classKeys, useClasses, useMyAssignments } from "./api";
 export { dueLabel, dueSoon, isOpen } from "./model";
 export { ClassView } from "./components/ClassView";
 export { ReportView } from "./components/ReportView";

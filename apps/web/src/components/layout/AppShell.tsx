@@ -3,77 +3,15 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { LucideIcon } from "lucide-react";
-import {
-  Award,
-  ClipboardCheck,
-  Database,
-  FileStack,
-  FileText,
-  Gauge,
-  HeartHandshake,
-  Library,
-  Menu,
-  Target,
-  TrendingUp,
-  Trophy,
-  Upload,
-  UserCog,
-  Users,
-  X,
-} from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useAuth } from "@/features/auth";
 import { RewardWatcher, StreakXpChip } from "@/features/rewards";
 import { cn } from "@/lib/utils";
-import type { Role } from "@/types/api";
+import { CommandPalette } from "./CommandPalette";
 import { Logo } from "./Logo";
+import { sectionsFor } from "./nav";
 import { NotificationBell } from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
-
-interface NavItem {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-  soon?: boolean;
-  /** Các trang con nằm ngoài href nhưng thuộc mục này (báo cáo bài giao thuộc Lớp học). */
-  also?: string[];
-}
-
-const STUDENT: NavItem[] = [
-  { href: "/practice", label: "Luyện tập", icon: Target },
-  { href: "/exams", label: "Làm đề", icon: FileText },
-  { href: "/arena", label: "Đấu trường", icon: Trophy },
-  { href: "/classes", label: "Lớp học", icon: Users },
-  { href: "/me/progress", label: "Tiến độ", icon: TrendingUp },
-  { href: "/me/achievements", label: "Thành tích", icon: Award },
-  { href: "/problems", label: "Ngân hàng bài", icon: Library },
-];
-
-const TEACHER: NavItem[] = [
-  { href: "/teacher/review", label: "Duyệt bài", icon: ClipboardCheck },
-  { href: "/teacher/uploads", label: "Tải tài liệu", icon: Upload },
-  { href: "/teacher/problem-sets", label: "Bộ đề", icon: FileStack },
-  { href: "/teacher/classes", label: "Lớp học", icon: Users, also: ["/teacher/assignments"] },
-  { href: "/problems", label: "Ngân hàng bài", icon: Library },
-];
-
-const PARENT: NavItem[] = [{ href: "/parent", label: "Con của tôi", icon: HeartHandshake }];
-
-const ADMIN: NavItem[] = [
-  { href: "/admin/sources", label: "Nguồn dữ liệu", icon: Database, soon: true },
-  { href: "/admin/users", label: "Người dùng", icon: UserCog, soon: true },
-  { href: "/admin/quality", label: "Chất lượng", icon: Gauge, soon: true },
-];
-
-function sectionsFor(role: Role) {
-  if (role === "student") return [{ title: "Học tập", items: STUDENT }];
-  if (role === "teacher") return [{ title: "Giảng dạy", items: TEACHER }];
-  if (role === "parent") return [{ title: "Gia đình", items: PARENT }];
-  return [
-    { title: "Giảng dạy", items: TEACHER },
-    { title: "Quản trị", items: ADMIN },
-  ];
-}
 
 const WEEKDAY = new Intl.DateTimeFormat("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" });
 
@@ -181,6 +119,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
         <Greeting fullName={user.full_name} />
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          <CommandPalette />
           {student && <StreakXpChip className="gap-2.5 px-2 max-[359px]:[&>*:last-child]:hidden" />}
           {student && <span className="mx-1 hidden h-6 w-px bg-line sm:block" aria-hidden />}
           <NotificationBell />

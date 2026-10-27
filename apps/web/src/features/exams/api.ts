@@ -11,11 +11,12 @@ export const examKeys = {
   skills: ["skills"] as const,
 };
 
-export function useSkills() {
+export function useSkills(enabled = true) {
   return useQuery({
     queryKey: examKeys.skills,
     queryFn: () => apiFetch<Skill[]>("/api/skills"),
     staleTime: Infinity,
+    enabled,
   });
 }
 

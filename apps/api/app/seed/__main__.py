@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.core.security import hash_password
-from app.models import DailyActivity, Problem, ReviewItem, Skill, SkillScore, User
+from app.models import DailyActivity, ParentLink, Problem, ReviewItem, Skill, SkillScore, User
 from app.modules.ingestion.pipeline import hash_key, problem_key
 from app.modules.learning.service import today_vn
 
@@ -66,6 +66,13 @@ async def seed(db: AsyncSession, demo: bool) -> dict:
                 db.add(DailyActivity(user_id=user.id, day=today, count=d["count"]))
                 for i in range(1, d["streakBefore"] + 1):
                     db.add(DailyActivity(user_id=user.id, day=today - timedelta(days=i), count=d["goal"]))
+        # Phụ huynh mẫu theo dõi sẵn học sinh mẫu
+        email_of = {u["key"]: u["email"] for u in DATA["demo_users"]}
+        for u in DATA["demo_users"]:
+            if u.get("parent_of"):
+                parent = await db.scalar(select(User.id).where(User.email == u["email"]))
+                child = await db.scalar(select(User.id).where(User.email == email_of[u["parent_of"]]))
+                await db.execute(insert(ParentLink).values(parent_id=parent, student_id=child).on_conflict_do_nothing())
     await db.commit()
     return {"skills": len(DATA["skills"]), "problems": len(DATA["problems"]), "review_items": len(DATA["review_items"]), "new_demo_users": users}
 

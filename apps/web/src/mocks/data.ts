@@ -214,12 +214,15 @@ export interface MockUser {
   full_name: string;
   role: Role;
   grade: number | null;
+  /** Phụ huynh mẫu: theo dõi sẵn học sinh có id này. */
+  parent_of?: string;
 }
 
 export const USERS: MockUser[] = [
   { id: "u_student", email: "hs@mathgen.vn", password: "123456", full_name: "Nguyễn Minh An", role: "student", grade: 9 },
   { id: "u_teacher", email: "gv@mathgen.vn", password: "123456", full_name: "Trần Thu Hà", role: "teacher", grade: null },
   { id: "u_admin", email: "admin@mathgen.vn", password: "123456", full_name: "Quản trị hệ thống", role: "admin", grade: null },
+  { id: "u_parent", email: "ph@mathgen.vn", password: "123456", full_name: "Nguyễn Văn Bình", role: "parent", grade: null, parent_of: "u_student" },
 ];
 
 /** Hồ sơ năng lực ban đầu của học sinh mẫu (giống ví dụ trong đề tài). */

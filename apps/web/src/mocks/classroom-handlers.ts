@@ -36,6 +36,8 @@ interface Ctx {
   users: MockUser[];
   exams: Map<string, MockExam>;
   buildSource: (b: CreateExamRequest) => { mode: ExamMode; source: ExamSource[] } | Response;
+  /** Bộ đề của giáo viên → câu hỏi để giao. */
+  setSource: (setId: string) => { title: string; mode: ExamMode; source: ExamSource[] } | Response;
   addExam: (
     userId: string,
     e: Pick<MockExam, "title" | "kind" | "mode" | "duration_minutes" | "ends_at"> & { assignment_id?: string },
@@ -210,20 +212,24 @@ function shuffled(source: ExamSource[], shuffle: boolean) {
   });
 }
 
+/** Bài giao của học sinh `ctx.user` ở mọi lớp: bài còn phải làm lên trước, hạn gần trước. */
+export function myAssignments(ctx: Ctx): Assignment[] {
+  const { classes, assignments } = store();
+  const mine = [...classes.values()].filter((c) => c.members.has(ctx.user.id));
+  const out = mine.flatMap((c) => [...assignments.values()].filter((a) => a.class_id === c.id).map((a) => assignmentOut(ctx, a, c)));
+  out.sort((x, y) => y.created_at.localeCompare(x.created_at));
+  const open = out.filter((a) => a.status === "todo" || a.status === "in_progress");
+  open.sort((x, y) => Number(!x.due_at) - Number(!y.due_at) || (x.due_at ?? x.created_at).localeCompare(y.due_at ?? y.created_at));
+  return [...open, ...out.filter((a) => !open.includes(a))];
+}
+
 export function handleClassroom(req: Request, path: string[], body: Record<string, unknown> | null, ctx: Ctx): Response | null {
   const { classes, assignments } = store();
   const { user } = ctx;
   const m = req.method;
   const [p0, p1, p2, p3] = path.map(decodeURIComponent);
 
-  if (p0 === "me" && p1 === "assignments" && m === "GET") {
-    const mine = [...classes.values()].filter((c) => c.members.has(user.id));
-    const out = mine.flatMap((c) => [...assignments.values()].filter((a) => a.class_id === c.id).map((a) => assignmentOut(ctx, a, c)));
-    out.sort((x, y) => y.created_at.localeCompare(x.created_at));
-    const open = out.filter((a) => a.status === "todo" || a.status === "in_progress");
-    open.sort((x, y) => Number(!x.due_at) - Number(!y.due_at) || (x.due_at ?? x.created_at).localeCompare(y.due_at ?? y.created_at));
-    return json([...open, ...out.filter((a) => !open.includes(a))]);
-  }
+  if (p0 === "me" && p1 === "assignments" && m === "GET") return json(myAssignments(ctx));
 
   if (p0 === "classes") {
     if (!p1) {
@@ -315,13 +321,21 @@ export function handleClassroom(req: Request, path: string[], body: Record<strin
         if (!owner) return fail(403, "forbidden");
         const b = (body ?? {}) as unknown as CreateAssignmentRequest;
         if (b.due_at && new Date(b.due_at).getTime() <= Date.now()) return fail(422, "due_in_past");
-        const official = b.kind === "official";
-        const built = ctx.buildSource(official ? { kind: "official", blueprint: "thpt" } : { mode: b.mode, size: b.size, skills: b.skills });
+        const official = b.kind === "official" && !b.problem_set_id;
+        const fromSet = b.problem_set_id ? ctx.setSource(b.problem_set_id) : null;
+        const built =
+          fromSet ?? ctx.buildSource(official ? { kind: "official", blueprint: "thpt" } : { mode: b.mode, size: b.size, skills: b.skills });
         if (built instanceof Response) return built;
+        const defaultTitle =
+          fromSet && !(fromSet instanceof Response)
+            ? fromSet.title
+            : official
+              ? "Đề thi tốt nghiệp THPT · Môn Toán"
+              : `Bài tập ${b.mode === "choice" ? "trắc nghiệm" : "tự luận"} · ${built.source.length} câu`;
         const a: MockAssignment = {
           id: newId("asg"),
           class_id: c.id,
-          title: b.title?.trim() || (official ? "Đề thi tốt nghiệp THPT · Môn Toán" : `Bài tập ${b.mode === "choice" ? "trắc nghiệm" : "tự luận"} · ${built.source.length} câu`),
+          title: b.title?.trim() || defaultTitle,
           kind: official ? "official" : "practice",
           mode: built.mode,
           size: built.source.length,

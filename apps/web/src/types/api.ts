@@ -1,7 +1,7 @@
 // Kiểu dữ liệu viết tay theo hợp đồng API trong tài liệu kiến trúc.
 // Khi backend FastAPI sẵn sàng, thay bằng file sinh từ OpenAPI (src/types/api.d.ts).
 
-export type Role = "student" | "teacher" | "admin";
+export type Role = "student" | "teacher" | "admin" | "parent";
 
 export interface User {
   id: string;
@@ -20,7 +20,9 @@ export interface RegisterRequest {
   full_name: string;
   email: string;
   password: string;
-  grade: number;
+  /** Đăng ký công khai: học sinh (bắt buộc chọn lớp) hoặc phụ huynh. */
+  role?: "student" | "parent";
+  grade?: number | null;
 }
 
 export interface Skill {
@@ -430,6 +432,8 @@ export interface CreateAssignmentRequest {
   mode?: ExamMode;
   size?: number;
   skills?: string[];
+  /** Giao bộ đề giáo viên đã soạn (bỏ qua hình thức / số câu / chủ đề). */
+  problem_set_id?: string;
   duration_minutes?: number | null;
   due_at?: string | null;
   shuffle?: boolean;
@@ -486,4 +490,164 @@ export interface LeaderboardRow {
   /** Số bài đã làm trong 7 ngày gần nhất. */
   week_problems: number;
   streak_days: number;
+}
+
+// ---- Bộ đề của giáo viên
+
+/** Dạng bài của bộ sinh đề (GET /exams/templates). */
+export interface TemplateInfo {
+  code: string;
+  name: string;
+  skill: string;
+  grade: number;
+  difficulty: number;
+  mode: ExamMode;
+  type: ExamQuestionType;
+  /** Phần trong đề thi THPT (I/II/III); dạng của đề ôn tập không có. */
+  part?: string;
+}
+
+/** Câu trong bộ đề: giáo viên thấy cả đáp án và lời giải. */
+export interface SetQuestion extends Omit<ExamQuestion, "id" | "index"> {
+  key: string;
+  answer: ExamAnswer;
+  answer_display: string;
+  solution: string[];
+}
+
+export interface ProblemSetSummary {
+  id: string;
+  title: string;
+  description: string | null;
+  size: number;
+  counts: Record<ExamQuestionType, number>;
+  skills: Skill[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProblemSet extends ProblemSetSummary {
+  questions: SetQuestion[];
+}
+
+export interface TemplateCount {
+  template: string;
+  count: number;
+}
+
+export interface UpdateProblemSetRequest {
+  title?: string;
+  description?: string | null;
+  /** Thứ tự mới theo `key`; câu không có trong danh sách bị xóa. */
+  order?: string[];
+}
+
+// ---- Đấu trường
+
+/** basic: Đại số lớp 8–10 · thpt: ôn thi tốt nghiệp THPT. */
+export type ArenaPool = "basic" | "thpt";
+export type ArenaDuration = 5 | 15 | 30;
+
+export interface ArenaItem {
+  statement: string;
+  template: TemplateRef;
+  given?: ExamAnswer;
+  is_correct: boolean;
+  points: number;
+  answer_display: string;
+}
+
+export interface ArenaRun {
+  id: string;
+  pool: ArenaPool;
+  duration_minutes: ArenaDuration;
+  started_at: string;
+  /** Server giữ giờ kết thúc; câu trả lời gửi sau giờ không được chấm. */
+  ends_at: string;
+  finished: boolean;
+  score: number;
+  correct: number;
+  answered: number;
+  combo: number;
+  best_combo: number;
+  question?: ExamQuestion;
+  // Sau khi kết thúc
+  history?: ArenaItem[];
+  week_rank?: number;
+  personal_best?: boolean;
+}
+
+export interface ArenaAnswerResult {
+  is_correct: boolean;
+  points: number;
+  correct_answer: ExamAnswer;
+  correct_answer_display: string;
+  run: ArenaRun;
+}
+
+export interface ArenaBoardRow {
+  rank: number;
+  user_id: string;
+  full_name: string;
+  grade: number | null;
+  score: number;
+  correct: number;
+  answered: number;
+  is_me: boolean;
+}
+
+export interface ArenaBoard {
+  rows: ArenaBoardRow[];
+  /** Hạng của tôi khi không nằm trong danh sách. */
+  me: ArenaBoardRow | null;
+}
+
+export interface ArenaBest {
+  pool: ArenaPool;
+  duration_minutes: ArenaDuration;
+  score: number;
+}
+
+export interface ArenaMe {
+  best: ArenaBest[];
+  recent: { id: string; pool: ArenaPool; duration_minutes: ArenaDuration; score: number; correct: number; answered: number; finished_at: string }[];
+  active_run_id: string | null;
+}
+
+// ---- Phụ huynh
+
+export interface LinkCode {
+  code: string;
+  expires_at: string;
+}
+
+export interface LinkedParent {
+  id: string;
+  full_name: string;
+  email: string;
+  linked_at: string;
+}
+
+export interface ChildSummary {
+  id: string;
+  full_name: string;
+  grade: number | null;
+  linked_at: string;
+  daily_goal: number;
+  today_problems: number;
+  week_problems: number;
+  streak_days: number;
+  pending_assignments: number;
+  missed_assignments: number;
+  last_active: string | null;
+}
+
+export interface ChildReport {
+  child: ChildSummary;
+  progress: Progress;
+  /** 14 ngày gần nhất, cũ → mới. */
+  activity: { day: string; count: number }[];
+  exams: ExamSummary[];
+  assignments: Assignment[];
+  arena: ArenaBest[];
 }

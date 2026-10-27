@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ClipboardList, LogOut, Plus, Trash2, Trophy, UserMinus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState, ErrorState } from "@/components/layout/States";
@@ -24,7 +24,9 @@ type Tab = "assignments" | "members" | "leaderboard";
 
 function Assignments({ c, owner }: { c: ClassDetail; owner: boolean }) {
   const { data, isPending, isError, error, refetch } = useClassAssignments(c.id);
-  const [creating, setCreating] = useState(false);
+  // Đến từ trang Bộ đề (?set=...): mở sẵn form giao bài với bộ đề đó
+  const presetSet = useSearchParams().get("set") ?? undefined;
+  const [creating, setCreating] = useState(owner && !!presetSet);
 
   return (
     <div className="space-y-4">
@@ -35,7 +37,7 @@ function Assignments({ c, owner }: { c: ClassDetail; owner: boolean }) {
           </Button>
         </div>
       )}
-      {creating && <AssignmentForm classId={c.id} onDone={() => setCreating(false)} />}
+      {creating && <AssignmentForm classId={c.id} presetSet={presetSet} onDone={() => setCreating(false)} />}
       {isPending ? (
         <Skeleton className="h-48 rounded-2xl" />
       ) : isError ? (

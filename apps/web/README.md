@@ -10,7 +10,7 @@ cp .env.example .env.local   # đã bật MOCK_API=1
 npm run dev                  # http://localhost:3000
 ```
 
-Tài khoản thử (mật khẩu `123456`): `hs@mathgen.vn` (học sinh), `gv@mathgen.vn` (giáo viên), `admin@mathgen.vn` (quản trị).
+Tài khoản thử (mật khẩu `123456`): `hs@mathgen.vn` (học sinh), `gv@mathgen.vn` (giáo viên), `admin@mathgen.vn` (quản trị), `ph@mathgen.vn` (phụ huynh, đã liên kết với học sinh mẫu).
 
 ## Mock API
 

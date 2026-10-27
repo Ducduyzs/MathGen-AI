@@ -37,8 +37,11 @@ import {
 } from "./data";
 import { buildQuestions, buildThptQuestions, TEMPLATES } from "./exam-generator";
 import type { Generated } from "./gen-utils";
-import { handleClassroom } from "./classroom-handlers";
+import { arenaBest, handleArena } from "./arena-handlers";
+import { handleClassroom, myAssignments } from "./classroom-handlers";
+import { handleFamily } from "./family-handlers";
 import { handleIngestion, handleStorageUpload } from "./ingestion-handlers";
+import { handleProblemSets, setSource } from "./problem-set-handlers";
 import { THPT_BLUEPRINT } from "./thpt-templates";
 
 export const EXAM_SIZES: Record<ExamMode, number[]> = { choice: [10, 20, 40, 100], written: [5, 10, 20, 40] };
@@ -156,7 +159,7 @@ const json = (data: unknown, status = 200, headers?: HeadersInit) => Response.js
 const fail = (status: number, code: string) => json({ code }, status);
 const id = (prefix: string) => `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 
-const toUser = ({ password: _password, ...u }: MockUser): User => u;
+const toUser = ({ password: _password, parent_of: _parentOf, ...u }: MockUser): User => u;
 const toPublic = ({ answer: _a, answer_display: _d, solution: _s, ...p }: MockProblem): PublicProblem => p;
 
 function session(u: MockUser) {
@@ -250,6 +253,17 @@ const toExamQuestion = ({ template, ...g }: BuiltQuestion): Omit<MockExamQuestio
   difficulty: template.difficulty,
   ...g,
 });
+
+const BY_CODE = new Map(TEMPLATES.map((t) => [t.code, t]));
+
+/** Một câu cho mỗi mã dạng bài, theo đúng thứ tự (bộ đề, Đấu trường). null nếu có mã không tồn tại. */
+function generateFrom(codes: string[]): ExamSource[] | null {
+  if (codes.some((c) => !BY_CODE.has(c))) return null;
+  return codes.map((c) => {
+    const t = BY_CODE.get(c)!;
+    return toExamQuestion({ template: t, ...t.make() });
+  });
+}
 
 /** Sinh câu hỏi cho đề ôn tập / đề thi THPT (dùng chung cho bài giao của lớp). */
 function buildSource(b: CreateExamRequest): { mode: ExamMode; source: ExamSource[] } | Response {
@@ -379,6 +393,41 @@ function submitExam(e: MockExam, answers: Record<string, ExamAnswer>): ExamResul
   };
 }
 
+function progressOf(userId: string): Progress {
+  const scores = scoresOf(userId);
+  const totals = state().totals.get(userId) ?? { total: 0, correct: 0 };
+  const daily = dailyOf(userId);
+  return {
+    // Học sinh mẫu chỉ có điểm ban đầu cho vài kỹ năng: kỹ năng còn lại coi như chưa luyện
+    skills: SKILLS.map((sk) => {
+      const sc = scores.get(sk.code) ?? { score: 0.5, n: 0 };
+      return { ...sk, score: sc.score, n_attempts: sc.n };
+    }),
+    total_attempts: totals.total,
+    correct_attempts: totals.correct,
+    daily_goal: DAILY_GOAL,
+    today_attempts: daily.count,
+    streak_days: daily.streakBefore + (daily.count >= DAILY_GOAL ? 1 : 0),
+  };
+}
+
+function recentExams(userId: string): ExamSummary[] {
+  return [...state().exams.values()]
+    .filter((e) => e.user_id === userId)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, 10)
+    .map((e) => ({
+      id: e.id,
+      title: e.title,
+      kind: e.kind,
+      mode: e.mode,
+      size: e.size,
+      created_at: e.created_at,
+      score: e.result?.score ?? null,
+      correct: e.result?.correct ?? null,
+    }));
+}
+
 export async function handleMock(req: Request, path: string[]): Promise<Response> {
   await sleep(150 + Math.random() * 250);
   const s = state();
@@ -386,7 +435,7 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
   const route = `${req.method} /${path.join("/")}`;
   // Link tải lên ký sẵn (giả lập R2): nhận file nhị phân, không cần đăng nhập.
   if (req.method === "PUT" && path[0] === "storage" && path[1]) return handleStorageUpload(req, decodeURIComponent(path[1]));
-  const body = req.method === "POST" ? await req.json().catch(() => null) : null;
+  const body = req.method === "POST" || req.method === "PATCH" ? await req.json().catch(() => null) : null;
 
   // ---- Xác thực
   if (route === "POST /auth/login") {
@@ -396,9 +445,19 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
   }
   if (route === "POST /auth/register") {
     const b = body as RegisterRequest | null;
-    if (!b?.email || !b.password || !b.full_name || !b.grade) return fail(422, "validation_error");
+    const role = b?.role ?? "student";
+    if (!b?.email || !b.password || !b.full_name || !["student", "parent"].includes(role) || (role === "student" && !b.grade)) {
+      return fail(422, "validation_error");
+    }
     if (s.users.some((x) => x.email === b.email.toLowerCase())) return fail(409, "email_taken");
-    const u: MockUser = { id: id("u"), email: b.email.toLowerCase(), password: b.password, full_name: b.full_name, role: "student", grade: b.grade };
+    const u: MockUser = {
+      id: id("u"),
+      email: b.email.toLowerCase(),
+      password: b.password,
+      full_name: b.full_name,
+      role,
+      grade: role === "student" ? (b.grade ?? null) : null,
+    };
     s.users.push(u);
     return session(u);
   }
@@ -440,20 +499,7 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
 
   if (route === "GET /me") return json(toUser(user));
 
-  if (route === "GET /me/progress") {
-    const scores = scoresOf(user.id);
-    const totals = s.totals.get(user.id) ?? { total: 0, correct: 0 };
-    const daily = dailyOf(user.id);
-    const body: Progress = {
-      skills: SKILLS.map((sk) => ({ ...sk, score: scores.get(sk.code)!.score, n_attempts: scores.get(sk.code)!.n })),
-      total_attempts: totals.total,
-      correct_attempts: totals.correct,
-      daily_goal: DAILY_GOAL,
-      today_attempts: daily.count,
-      streak_days: daily.streakBefore + (daily.count >= DAILY_GOAL ? 1 : 0),
-    };
-    return json(body);
-  }
+  if (route === "GET /me/progress") return json(progressOf(user.id));
 
   if (route === "GET /me/attempts") {
     const limit = Number(url.searchParams.get("limit") ?? 10);
@@ -491,7 +537,9 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
 
     // Ở backend thật, phần này do worker hàng đợi `learning` làm bất đồng bộ.
     // Đúng nhờ gợi ý chỉ được cộng nửa mức.
-    const sc = scoresOf(user.id).get(p.skill.code)!;
+    const scores = scoresOf(user.id);
+    const sc = scores.get(p.skill.code) ?? { score: 0.5, n: 0 };
+    scores.set(p.skill.code, sc);
     const delta = 0.12 * ((ok ? 1 : 0) - sc.score) * (ok && b.hints_used > 0 ? 0.5 : 1);
     sc.score = Math.min(1, Math.max(0, sc.score + delta));
     sc.n += 1;
@@ -512,23 +560,7 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
 
   // ---- Làm đề
   if (route === "GET /exams/templates") return json(TEMPLATES.map(({ make: _m, ...t }) => t));
-  if (route === "GET /exams") {
-    const items: ExamSummary[] = [...s.exams.values()]
-      .filter((e) => e.user_id === user.id)
-      .sort((a, b) => b.created_at.localeCompare(a.created_at))
-      .slice(0, 10)
-      .map((e) => ({
-        id: e.id,
-        title: e.title,
-        kind: e.kind,
-        mode: e.mode,
-        size: e.size,
-        created_at: e.created_at,
-        score: e.result?.score ?? null,
-        correct: e.result?.correct ?? null,
-      }));
-    return json(items);
-  }
+  if (route === "GET /exams") return json(recentExams(user.id));
   if (route === "POST /exams") {
     const created = createExam(user.id, (body ?? {}) as CreateExamRequest);
     return created instanceof Response ? created : json(toPublicExam(created), 201);
@@ -548,19 +580,47 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
   }
 
   // ---- Lớp học & bài giao
-  const classroom = handleClassroom(req, path, body, {
-    user,
+  const classCtx = (u: MockUser) => ({
+    user: u,
     users: s.users,
     exams: s.exams,
     buildSource,
+    setSource: (setId: string) => setSource(u.id, setId),
     addExam,
-    activity: (userId) => {
+    activity: (userId: string) => {
       const d = dailyOf(userId);
       return { week: d.count, streak: d.streakBefore + (d.count >= DAILY_GOAL ? 1 : 0) };
     },
     publicExam: toPublicExam,
   });
+  const classroom = handleClassroom(req, path, body, classCtx(user));
   if (classroom) return classroom;
+
+  // ---- Bộ đề, Đấu trường, phụ huynh
+  const problemSets = handleProblemSets(req, path, body, { user, generate: generateFrom });
+  if (problemSets) return problemSets;
+  const arena = handleArena(req, path, body, {
+    user,
+    users: s.users,
+    templates: (pool) => TEMPLATES.filter((t) => t.type !== "true_false" && (pool === "thpt") === !!t.part),
+    generate: generateFrom,
+    grade: (q, a) => gradeExamAnswer(q as MockExamQuestion, a),
+    addActivity: (userId, n) => {
+      dailyOf(userId).count += n;
+    },
+  });
+  if (arena) return arena;
+  const family = handleFamily(req, path, body, {
+    user,
+    users: s.users,
+    progress: progressOf,
+    exams: recentExams,
+    assignments: (u) => myAssignments(classCtx(u)),
+    arena: arenaBest,
+    daily: dailyOf,
+    goal: DAILY_GOAL,
+  });
+  if (family) return family;
 
   // ---- Tải đề & sinh câu hỏi (giáo viên / quản trị)
   const ingestion = await handleIngestion(req, path, body, {

@@ -1,22 +1,29 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { BookOpenCheck, GraduationCap, Shuffle } from "lucide-react";
+import { BookOpenCheck, FileStack, GraduationCap, Shuffle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
-import { Input, Label } from "@/components/ui/input";
+import { Input, Label, Select } from "@/components/ui/input";
 import { useSkills } from "@/features/exams/api";
 import { EXAM_SIZES } from "@/features/exams/model";
+import { useProblemSets } from "@/features/problem-sets/api";
+import { countsLabel } from "@/features/problem-sets/model";
 import { errorMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 import type { ExamKind, ExamMode } from "@/types/api";
 import { useCreateAssignment } from "../api";
 
-const KINDS: { kind: ExamKind; icon: LucideIcon; title: string; text: string }[] = [
+/** "set": giao bộ đề giáo viên đã soạn ở trang Bộ đề. */
+type Kind = ExamKind | "set";
+
+const KINDS: { kind: Kind; icon: LucideIcon; title: string; text: string }[] = [
   { kind: "practice", icon: BookOpenCheck, title: "Bài tập ôn luyện", text: "Tự chọn hình thức, số câu, chủ đề và thời gian." },
+  { kind: "set", icon: FileStack, title: "Từ bộ đề", text: "Giao bộ đề bạn đã soạn, đúng từng câu đã chọn." },
   { kind: "official", icon: GraduationCap, title: "Đề thi thử THPT", text: "22 câu đúng cấu trúc Bộ GD&ĐT, 90 phút, thang 10." },
 ];
 
@@ -42,10 +49,12 @@ function presetDue(days: number) {
   return localInput(d);
 }
 
-export function AssignmentForm({ classId, onDone }: { classId: string; onDone: () => void }) {
+export function AssignmentForm({ classId, presetSet, onDone }: { classId: string; presetSet?: string; onDone: () => void }) {
   const skills = useSkills();
+  const sets = useProblemSets();
   const create = useCreateAssignment();
-  const [kind, setKind] = useState<ExamKind>("practice");
+  const [kind, setKind] = useState<Kind>(presetSet ? "set" : "practice");
+  const [setId, setSetId] = useState(presetSet ?? "");
   const [mode, setMode] = useState<ExamMode>("choice");
   const [size, setSize] = useState(20);
   const [picked, setPicked] = useState<string[]>([]);
@@ -55,6 +64,8 @@ export function AssignmentForm({ classId, onDone }: { classId: string; onDone: (
   const [title, setTitle] = useState("");
 
   const official = kind === "official";
+  const fromSet = kind === "set";
+  const chosenSet = sets.data?.find((x) => x.id === (setId || sets.data?.[0]?.id));
 
   function changeMode(m: ExamMode) {
     setMode(m);
@@ -63,15 +74,20 @@ export function AssignmentForm({ classId, onDone }: { classId: string; onDone: (
 
   function submit(e: FormEvent) {
     e.preventDefault();
+    if (fromSet && !chosenSet) return toast.error("Chọn bộ đề cần giao.");
     create.mutate(
       {
         classId,
         body: {
-          kind,
+          kind: fromSet ? "practice" : kind,
           title: title.trim() || undefined,
           due_at: due ? new Date(due).toISOString() : null,
           shuffle,
-          ...(official ? {} : { mode, size, skills: picked.length ? picked : undefined, duration_minutes: duration }),
+          ...(official
+            ? {}
+            : fromSet
+              ? { problem_set_id: chosenSet!.id, duration_minutes: duration }
+              : { mode, size, skills: picked.length ? picked : undefined, duration_minutes: duration }),
         },
       },
       {
@@ -89,7 +105,7 @@ export function AssignmentForm({ classId, onDone }: { classId: string; onDone: (
       <form onSubmit={submit} className="space-y-6">
         <section>
           <CardTitle>Loại bài</CardTitle>
-          <div role="radiogroup" aria-label="Loại bài" className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div role="radiogroup" aria-label="Loại bài" className="mt-3 grid gap-3 sm:grid-cols-3">
             {KINDS.map((k) => {
               const selected = k.kind === kind;
               return (
@@ -116,7 +132,32 @@ export function AssignmentForm({ classId, onDone }: { classId: string; onDone: (
           </div>
         </section>
 
-        {!official && (
+        {fromSet && (
+          <section>
+            <CardTitle>Bộ đề</CardTitle>
+            {sets.isPending ? null : !sets.data?.length ? (
+              <p className="mt-2 text-sm text-muted">
+                Bạn chưa soạn bộ đề nào.{" "}
+                <Link href="/teacher/problem-sets" className="font-medium text-brand-700 hover:underline">
+                  Soạn bộ đề
+                </Link>
+              </p>
+            ) : (
+              <>
+                <Select aria-label="Chọn bộ đề" className="mt-3" value={chosenSet?.id ?? ""} onChange={(e) => setSetId(e.target.value)}>
+                  {sets.data.map((x) => (
+                    <option key={x.id} value={x.id} disabled={!x.size}>
+                      {x.title} · {x.size} câu
+                    </option>
+                  ))}
+                </Select>
+                {chosenSet && <p className="mt-1.5 text-sm text-muted">{countsLabel(chosenSet)}</p>}
+              </>
+            )}
+          </section>
+        )}
+
+        {kind === "practice" && (
           <>
             <section className="grid gap-5 sm:grid-cols-2">
               <div>
@@ -160,18 +201,20 @@ export function AssignmentForm({ classId, onDone }: { classId: string; onDone: (
                 ))}
               </div>
             </section>
-
-            <section>
-              <CardTitle>Thời gian làm bài</CardTitle>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {DURATIONS.map((d) => (
-                  <Chip key={d ?? "none"} size="sm" selected={d === duration} onClick={() => setDuration(d)}>
-                    {d ? `${d} phút` : "Không giới hạn"}
-                  </Chip>
-                ))}
-              </div>
-            </section>
           </>
+        )}
+
+        {!official && (
+          <section>
+            <CardTitle>Thời gian làm bài</CardTitle>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {DURATIONS.map((d) => (
+                <Chip key={d ?? "none"} size="sm" selected={d === duration} onClick={() => setDuration(d)}>
+                  {d ? `${d} phút` : "Không giới hạn"}
+                </Chip>
+              ))}
+            </div>
+          </section>
         )}
 
         <section className="grid gap-5 sm:grid-cols-2">
@@ -203,7 +246,7 @@ export function AssignmentForm({ classId, onDone }: { classId: string; onDone: (
             <Input
               id="assignment-title"
               className="mt-1.5"
-              placeholder={official ? "Đề thi tốt nghiệp THPT · Môn Toán" : "Ví dụ: Bài tập tuần 5 · Hàm số"}
+              placeholder={official ? "Đề thi tốt nghiệp THPT · Môn Toán" : fromSet ? (chosenSet?.title ?? "Tên bộ đề") : "Ví dụ: Bài tập tuần 5 · Hàm số"}
               maxLength={200}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -221,7 +264,9 @@ export function AssignmentForm({ classId, onDone }: { classId: string; onDone: (
         </section>
 
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line pt-5">
-          <p className="mr-auto text-sm text-muted">Câu hỏi được sinh một lần khi giao: cả lớp làm cùng một đề.</p>
+          <p className="mr-auto text-sm text-muted">
+            {fromSet ? "Bài giao là bản chụp bộ đề: sửa bộ đề sau này không đổi bài đã giao." : "Câu hỏi được sinh một lần khi giao: cả lớp làm cùng một đề."}
+          </p>
           <Button type="button" variant="ghost" onClick={onDone}>
             Hủy
           </Button>

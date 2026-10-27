@@ -52,6 +52,8 @@ class CreateAssignmentIn(BaseModel):
     mode: Literal["choice", "written"] | None = None
     size: int | None = None
     skills: list[Annotated[str, Field(max_length=64)]] | None = Field(default=None, max_length=20)
+    # Giao bộ đề giáo viên đã soạn (bỏ qua hình thức / số câu / chủ đề)
+    problem_set_id: str | None = Field(default=None, max_length=26)
     # Đề thi THPT luôn 90 phút; đề ôn tập có thể không giới hạn thời gian
     duration_minutes: int | None = Field(default=None, ge=5, le=180)
     due_at: datetime | None = None

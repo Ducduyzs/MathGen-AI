@@ -21,8 +21,7 @@ async def register(db: AsyncSession, body: RegisterIn) -> User:
     email = body.email.lower()
     if await db.scalar(select(User.id).where(User.email == email)):
         raise ApiError(409, "email_taken")
-    # Đăng ký công khai chỉ tạo tài khoản học sinh; giáo viên do quản trị viên cấp.
-    user = User(email=email, password_hash=hash_password(body.password), full_name=body.full_name.strip(), role="student", grade=body.grade)
+    user = User(email=email, password_hash=hash_password(body.password), full_name=body.full_name.strip(), role=body.role, grade=body.grade)
     db.add(user)
     await db.flush()
     return user

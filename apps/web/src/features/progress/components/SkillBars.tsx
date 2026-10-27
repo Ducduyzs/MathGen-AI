@@ -7,7 +7,8 @@ import type { SkillScore } from "@/types/api";
 // Vạch mốc trên thanh: ranh giới giữa các mức thành thạo.
 const MARKS = [0.4, 0.6, 0.85];
 
-export function SkillBars({ skills }: { skills: SkillScore[] }) {
+/** `readOnly`: phụ huynh xem, không có nút luyện tập. */
+export function SkillBars({ skills, readOnly = false }: { skills: SkillScore[]; readOnly?: boolean }) {
   return (
     <ul className="divide-y divide-line">
       {skills.map((s) => {
@@ -35,9 +36,11 @@ export function SkillBars({ skills }: { skills: SkillScore[] }) {
               </div>
               <p className="mt-1.5 text-xs text-muted">{fresh ? "Chưa có lượt làm" : `${percent(s.score)} · ${s.n_attempts} lượt làm`}</p>
             </div>
-            <Link href={`/practice?skill=${s.code}`} className={buttonClasses({ variant: "secondary", size: "sm" })}>
-              Luyện kỹ năng này
-            </Link>
+            {!readOnly && (
+              <Link href={`/practice?skill=${s.code}`} className={buttonClasses({ variant: "secondary", size: "sm" })}>
+                Luyện kỹ năng này
+              </Link>
+            )}
           </li>
         );
       })}

@@ -54,13 +54,16 @@ app/
 │   ├── learning/       bài tiếp theo, chấm bài (Fraction, idempotency), tiến độ, mục tiêu ngày, chuỗi ngày
 │   ├── exams/          làm đề: 42 dạng bài (generator/), đề ôn tập, đề thi THPT, chấm Đúng/Sai từng phần, làm lại câu sai
 │   ├── classroom/      lớp học (mã vào lớp), giao bài có hạn nộp / đảo câu, báo cáo lớp, bảng xếp hạng
+│   ├── problem_sets/   bộ đề giáo viên soạn: chọn câu theo dạng bài, đổi số liệu, sắp xếp, nhân bản, giao cho lớp
+│   ├── arena/          Đấu trường: trả lời nhanh 5/15/30 phút, thưởng chuỗi đúng, bảng xếp hạng tuần
+│   ├── family/         phụ huynh: mã liên kết (một lần, 24 giờ), xem tiến độ / bài lớp giao / đề đã làm của con
 │   └── ingestion/      tải đề (link ký sẵn), pipeline 5 bước trong worker, sinh biến thể có kiểm chứng
 │       └── pipeline/   phân tích biểu thức → nhận dạng 9 dạng → giải chính xác → dạng chuẩn chống trùng → SymPy kiểm chứng
 ├── workers/         Celery (hàng đợi learning / ingest), phiên DB đồng bộ
 ├── seed/            dữ liệu mẫu (data.json xuất từ mock: cd apps/web && npm run seed:export)
 └── main.py
 migrations/          Alembic
-tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, lớp học, tải đề, worker)
+tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, lớp học, bộ đề, đấu trường, phụ huynh, tải đề, worker)
 ```
 
 **Quy tắc giữa các module:** module chỉ gọi `service.py` của module khác, không đọc bảng của nhau. Ví dụ `learning` lấy bài qua `problem_bank.service`.
@@ -81,6 +84,9 @@ tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, 
 - **Pipeline:** cùng thuật toán với bản TypeScript trong mock; đã đối chiếu 3.629 đề, hai bên cho kết quả giống hệt.
   Số học dùng phân số chính xác nên sinh biến thể chạy được trong request (< 1 giây cho 10 biến thể);
   SymPy chỉ chạy trong worker để kiểm chứng độc lập lời giải.
+- **Đấu trường:** chỉ câu đang hỏi được lưu kèm đáp án (`arena_runs.current`), giờ kết thúc do server giữ (trễ tối đa 5 giây);
+  bảng xếp hạng lấy lượt cao nhất mỗi người bằng `DISTINCT ON`, tuần tính từ 0 giờ thứ Hai giờ Việt Nam.
+- **Bộ đề → bài giao** là bản chụp: sửa bộ đề sau khi giao không đổi bài học sinh đang làm.
 - **Chống trùng:** khóa dạng chuẩn (quy đồng, chia ước chung, hệ số đầu dương) → SHA-256, lưu ở `problems.canonical_hash` (UNIQUE).
 
 ## Lộ trình
@@ -91,6 +97,7 @@ tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, 
 | M2 | Làm đề (`/api/exams`): 42 dạng bài bằng Python, đề ôn tập, đề thi THPT | ✅ |
 | M3 | Tải đề và sinh biến thể (`/api/ingestion`, `/api/generation`), duyệt bài vào ngân hàng | ✅ |
 | M3.5 | Lớp học & giao bài (`/api/classes`, `/api/assignments`, `/api/me/assignments`): mã vào lớp, hạn nộp, đảo câu, báo cáo từng câu / kỹ năng, xuất bảng điểm, bảng xếp hạng | ✅ |
+| M3.6 | Bộ đề (`/api/problem-sets`, in đề kèm đáp án ở frontend), Đấu trường (`/api/arena`), tài khoản phụ huynh (`/api/children`, `/api/me/parent-code`) | ✅ |
 | M4 | OCR ảnh/PDF scan (Mathpix/Pix2Text), lưu file trên R2, mô hình phân loại thay luật nhận dạng | chưa |
 
 **Hạn chế hiện tại:** ảnh và PDF scan báo lỗi "cần OCR". Biến thể dạng "giữ như đề gốc" có đáp án là tập nghiệm của bất phương trình hoặc biểu thức

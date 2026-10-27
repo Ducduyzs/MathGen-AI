@@ -9,4 +9,4 @@ async function handler(req: Request, ctx: { params: Promise<{ path: string[] }> 
   return handleMock(req, (await ctx.params).path);
 }
 
-export { handler as DELETE, handler as GET, handler as POST, handler as PUT };
+export { handler as DELETE, handler as GET, handler as PATCH, handler as POST, handler as PUT };

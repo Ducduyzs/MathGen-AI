@@ -27,6 +27,7 @@ from app.modules.exams.schemas import ExamOut, TemplateRef
 from app.modules.learning import service as learning
 from app.modules.problem_bank import service as bank
 from app.modules.problem_bank.schemas import SkillOut
+from app.modules.problem_sets import service as problem_sets
 from app.modules.users.models import User
 
 # Bỏ chữ dễ nhầm (I/1, O/0, L) để học sinh đọc mã trên bảng không gõ sai
@@ -215,9 +216,14 @@ async def create_assignment(db: AsyncSession, user: User, class_id: str, body: C
     due = body.due_at.replace(tzinfo=UTC) if body.due_at and body.due_at.tzinfo is None else body.due_at
     if due and due <= now:
         raise ApiError(422, "due_in_past")
-    mode, rows = exams.generate_rows(body.kind, body.mode, body.size, body.skills)
-    duration = THPT_BLUEPRINT["duration_minutes"] if body.kind == "official" else body.duration_minutes
-    a = Assignment(class_id=c.id, title=(body.title or "").strip() or _default_title(body, len(rows)), kind=body.kind, mode=mode,
+    kind = "practice" if body.problem_set_id else body.kind
+    if body.problem_set_id:
+        default_title, mode, rows = await problem_sets.assignment_rows(db, user, body.problem_set_id)
+    else:
+        mode, rows = exams.generate_rows(kind, body.mode, body.size, body.skills)
+        default_title = _default_title(body, len(rows))
+    duration = THPT_BLUEPRINT["duration_minutes"] if kind == "official" else body.duration_minutes
+    a = Assignment(class_id=c.id, title=(body.title or "").strip() or default_title, kind=kind, mode=mode,
                    size=len(rows), duration_minutes=duration, due_at=due, shuffle=body.shuffle, questions=rows, created_at=now)
     db.add(a)
     await db.commit()

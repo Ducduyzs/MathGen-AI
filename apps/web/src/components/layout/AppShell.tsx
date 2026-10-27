@@ -10,11 +10,13 @@ import {
   FileStack,
   FileText,
   Gauge,
+  HeartHandshake,
   Library,
   LogOut,
   Menu,
   Target,
   TrendingUp,
+  Trophy,
   Upload,
   UserCog,
   Users,
@@ -37,6 +39,7 @@ interface NavItem {
 const STUDENT: NavItem[] = [
   { href: "/practice", label: "Luyện tập", icon: Target },
   { href: "/exams", label: "Làm đề", icon: FileText },
+  { href: "/arena", label: "Đấu trường", icon: Trophy },
   { href: "/classes", label: "Lớp học", icon: Users },
   { href: "/me/progress", label: "Tiến độ", icon: TrendingUp },
   { href: "/problems", label: "Ngân hàng bài", icon: Library },
@@ -45,10 +48,12 @@ const STUDENT: NavItem[] = [
 const TEACHER: NavItem[] = [
   { href: "/teacher/review", label: "Duyệt bài", icon: ClipboardCheck },
   { href: "/teacher/uploads", label: "Tải tài liệu", icon: Upload },
-  { href: "/teacher/problem-sets", label: "Bộ đề", icon: FileStack, soon: true },
+  { href: "/teacher/problem-sets", label: "Bộ đề", icon: FileStack },
   { href: "/teacher/classes", label: "Lớp học", icon: Users, also: ["/teacher/assignments"] },
   { href: "/problems", label: "Ngân hàng bài", icon: Library },
 ];
+
+const PARENT: NavItem[] = [{ href: "/parent", label: "Con của tôi", icon: HeartHandshake }];
 
 const ADMIN: NavItem[] = [
   { href: "/admin/sources", label: "Nguồn dữ liệu", icon: Database, soon: true },
@@ -59,6 +64,7 @@ const ADMIN: NavItem[] = [
 function sectionsFor(role: Role) {
   if (role === "student") return [{ title: "Học tập", items: STUDENT }];
   if (role === "teacher") return [{ title: "Giảng dạy", items: TEACHER }];
+  if (role === "parent") return [{ title: "Gia đình", items: PARENT }];
   return [
     { title: "Giảng dạy", items: TEACHER },
     { title: "Quản trị", items: ADMIN },
@@ -146,8 +152,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="min-h-dvh bg-surface lg:pl-64">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-line bg-white lg:block">{sidebar()}</aside>
+    <div className="min-h-dvh bg-surface lg:pl-64 print:bg-white print:pl-0">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-line bg-white lg:block print:hidden">{sidebar()}</aside>
 
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
@@ -156,7 +162,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-line bg-white px-4 lg:hidden">
+      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-line bg-white px-4 lg:hidden print:hidden">
         <button onClick={() => setOpen(true)} className="rounded-lg p-2 text-ink hover:bg-brand-50" aria-label="Mở menu">
           <Menu className="size-5" />
         </button>
@@ -164,7 +170,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       {/* Trang làm đề dùng hết chiều ngang để bảng câu hỏi nằm sát mép phải. */}
-      <main className={cn("mx-auto px-4 py-6 sm:px-6 lg:py-8", pathname.startsWith("/exams/") ? "max-w-none" : "max-w-5xl")}>
+      <main className={cn("mx-auto px-4 py-6 sm:px-6 lg:py-8 print:max-w-none print:p-0", pathname.startsWith("/exams/") ? "max-w-none" : "max-w-5xl")}>
         {children}
       </main>
     </div>

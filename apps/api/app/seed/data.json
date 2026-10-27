@@ -615,6 +615,15 @@
       "full_name": "Quản trị hệ thống",
       "role": "admin",
       "grade": null
+    },
+    {
+      "key": "u_parent",
+      "email": "ph@mathgen.vn",
+      "password": "123456",
+      "full_name": "Nguyễn Văn Bình",
+      "role": "parent",
+      "grade": null,
+      "parent_of": "u_student"
     }
   ],
   "demo_scores": {

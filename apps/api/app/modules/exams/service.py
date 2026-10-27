@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import ApiError
 from app.core.ids import new_id
-from app.modules.exams.generator import BY_CODE, TEMPLATES, THPT_BLUEPRINT, Rng, build_questions, build_thpt
+from app.modules.exams.generator import ALGEBRA, BY_CODE, TEMPLATES, THPT, THPT_BLUEPRINT, Rng, build_questions, build_thpt, generate
 from app.modules.exams.models import Exam, ExamQuestion
 from app.modules.exams.schemas import (
     CreateExamIn, ExamOut, ExamQuestionOut, ExamResult, ExamSummary, SubmitExamIn, TemplateInfo, TemplateRef,
@@ -30,8 +30,16 @@ RECENT = 10
 OFFICIAL_TITLE = "Đề thi tốt nghiệp THPT · Môn Toán"
 
 
+# Kho dạng bài của Đấu trường: chỉ câu một đáp án (A/B/C/D hoặc điền số), trả lời nhanh được
+ARENA_POOLS = {"basic": ALGEBRA, "thpt": THPT}
+
+
 def templates() -> list[TemplateInfo]:
     return [TemplateInfo(**t.info()) for t in TEMPLATES]
+
+
+def arena_templates(pool: str) -> list[TemplateInfo]:
+    return [TemplateInfo(**t.info()) for t in ARENA_POOLS[pool] if t.type != "true_false"]
 
 
 def _from_generated(template_code: str, q: dict) -> dict:
@@ -61,6 +69,13 @@ def generate_rows(kind: str, mode: str | None, size: int | None, skills: list[st
     if not built:
         raise ApiError(422, "no_template")
     return mode, [_from_generated(t.code, q) for t, q in built]
+
+
+def generate_from_templates(codes: list[str]) -> list[dict]:
+    """Sinh một câu cho mỗi mã dạng bài (lặp mã để lấy nhiều câu), theo đúng thứ tự (bộ đề của giáo viên)."""
+    if any(c not in BY_CODE for c in codes):
+        raise ApiError(422, "no_template")
+    return [_from_generated(t.code, q) for t, q in generate([BY_CODE[c] for c in codes], Rng())]
 
 
 async def _owned(db: AsyncSession, user: User, exam_id: str, *, lock: bool = False) -> Exam:
@@ -180,13 +195,21 @@ async def source_indexes(db: AsyncSession, exam_ids: list[str]) -> dict[str, int
 # ---------------------------------------------------------------- chấm bài
 
 def points(q: ExamQuestion, given: dict | None) -> Fraction:
-    exp = q.answer
+    return _points(q.answer, q.tolerance, given)
+
+
+def row_points(row: dict, given: dict | None) -> float:
+    """Chấm một câu lưu dạng dict (câu của Đấu trường)."""
+    return float(_points(row["answer"], row.get("tolerance"), given))
+
+
+def _points(exp: dict, tolerance: float | None, given: dict | None) -> Fraction:
     if not given or given.get("type") != exp["type"]:
         return Fraction(0)
     if exp["type"] == "choice":
         return Fraction(int(str(given["value"]).strip().upper() == exp["value"]))
     if exp["type"] == "number":
-        tol = Fraction(q.tolerance).limit_denominator(10**6) if q.tolerance else None
+        tol = Fraction(tolerance).limit_denominator(10**6) if tolerance else None
         return Fraction(int(same_number(str(given["value"]), str(exp["value"]), tol)))
     matches = sum(1 for k, v in exp["value"].items() if given["value"].get(k) is v)
     return TF_POINTS[matches]

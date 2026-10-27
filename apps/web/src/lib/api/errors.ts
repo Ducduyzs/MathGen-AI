@@ -14,6 +14,12 @@ const MESSAGES: Record<string, string> = {
   class_not_found: "Không tìm thấy lớp với mã này. Kiểm tra lại mã giáo viên gửi.",
   assignment_closed: "Bài tập đã hết hạn nộp.",
   due_in_past: "Hạn nộp phải ở sau thời điểm hiện tại.",
+  set_empty: "Bộ đề chưa có câu nào. Thêm câu trước khi giao.",
+  set_too_large: "Bộ đề tối đa 100 câu.",
+  run_over: "Lượt đấu đã hết giờ.",
+  stale_question: "Câu này đã được chấm. Đang tải câu tiếp theo.",
+  link_code_invalid: "Mã liên kết không đúng hoặc đã hết hạn. Nhờ con tạo mã mới.",
+  too_many_links: "Đã đạt số tài khoản liên kết tối đa.",
   validation_error: "Dữ liệu chưa hợp lệ.",
   network_error: "Không kết nối được máy chủ. Kiểm tra mạng và thử lại.",
 };

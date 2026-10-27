@@ -9,7 +9,7 @@ from app.core.ids import new_id
 
 class User(Timestamped, Base):
     __tablename__ = "users"
-    __table_args__ = (CheckConstraint("role in ('student', 'teacher', 'admin')", name="role"),)
+    __table_args__ = (CheckConstraint("role in ('student', 'teacher', 'admin', 'parent')", name="role"),)
 
     id: Mapped[str] = mapped_column(String(26), primary_key=True, default=new_id)
     email: Mapped[str] = mapped_column(String(254), unique=True)

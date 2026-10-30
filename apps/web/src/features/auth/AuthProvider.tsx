@@ -15,6 +15,8 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<User>;
   register: (body: RegisterRequest) => Promise<User>;
   logout: () => Promise<void>;
+  /** true khi người dùng tự đăng xuất (không phải hết phiên): khi đó không quay lại trang cũ sau đăng nhập. */
+  signedOut: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -23,6 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [status, setStatus] = useState<Status>("loading");
+  const [signedOut, setSignedOut] = useState(false);
 
   const clear = useCallback(() => {
     setAccessToken(null);
@@ -56,28 +59,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clear]);
 
   const signIn = useCallback((res: LoginResponse) => {
+    // Phiên trước có thể hết hạn mà không qua logout: bỏ dữ liệu đã cache của tài khoản cũ
+    queryClient.clear();
+    setSignedOut(false);
     setAccessToken(res.access_token);
     setUser(res.user);
     setStatus("authenticated");
     return res.user;
-  }, []);
+  }, [queryClient]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       status,
       user,
+      signedOut,
       login: async (email, password) => signIn(await authApi.login(email, password)),
       register: async (body) => signIn(await authApi.register(body)),
       logout: async () => {
         try {
           await authApi.logout();
         } finally {
+          setSignedOut(true);
           clear();
           queryClient.clear();
         }
       },
     }),
-    [status, user, signIn, clear, queryClient],
+    [status, user, signedOut, signIn, clear, queryClient],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

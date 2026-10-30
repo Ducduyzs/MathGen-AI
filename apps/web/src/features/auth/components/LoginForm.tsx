@@ -10,7 +10,8 @@ import { FieldError, Input, Label } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { errorMessage } from "@/lib/api/errors";
 import { useAuth } from "../AuthProvider";
-import { homeFor, safeNext } from "../roles";
+import type { Role } from "@/types/api";
+import { canAccess, homeFor, safeNext } from "../roles";
 
 const schema = z.object({
   email: z.string().trim().email("Email chưa đúng định dạng"),
@@ -36,16 +37,20 @@ export function LoginForm() {
     formState: { errors, isSubmitting },
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { email: "", password: "" } });
 
+  // `next` là trang của phiên trước (có thể của vai trò khác): chỉ quay lại nếu vai trò mới được vào.
+  const target = (role: Role) => (next && canAccess(role, next) ? next : homeFor(role));
+
   // Đã đăng nhập mà vẫn vào /login thì chuyển đi luôn.
   useEffect(() => {
-    if (status === "authenticated" && user) router.replace(next ?? homeFor(user.role));
+    if (status === "authenticated" && user) router.replace(target(user.role));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, user, next, router]);
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
     try {
       const signedIn = await login(values.email, values.password);
-      router.replace(next ?? homeFor(signedIn.role));
+      router.replace(target(signedIn.role));
     } catch (err) {
       setFormError(errorMessage(err));
     }

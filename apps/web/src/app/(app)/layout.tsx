@@ -11,13 +11,14 @@ import { canAccess, homeFor, useAuth } from "@/features/auth";
 
 // AuthGuard: các trang trong (app) cần đăng nhập và render phía client.
 export default function AppLayout({ children }: { children: ReactNode }) {
-  const { status, user } = useAuth();
+  const { status, user, signedOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (status === "guest") router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-  }, [status, router, pathname]);
+    // Hết phiên: nhớ trang để quay lại; tự đăng xuất: về /login sạch (người đăng nhập sau có thể là tài khoản khác)
+    if (status === "guest") router.replace(signedOut ? "/login" : `/login?next=${encodeURIComponent(pathname)}`);
+  }, [status, signedOut, router, pathname]);
 
   if (status !== "authenticated" || !user) return <FullPageLoader />;
 

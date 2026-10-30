@@ -9,6 +9,7 @@ from app.modules.ingestion.pipeline import Structure, run_pipeline, solve
 from app.modules.ingestion.pipeline.extract import ExtractError, clean, extract_text
 from app.modules.ingestion.pipeline.split import split_questions
 from app.modules.ingestion.pipeline.sympy_check import verify
+from app.modules.classifier import service as classifier
 from app.modules.problem_bank import service as bank
 from app.modules.regions import service as regions
 from app.workers.celery_app import celery
@@ -61,6 +62,9 @@ def process_source(source_id: str) -> str:
 
         # 3. Nhận dạng, giải, chống trùng
         items = run_pipeline(text, src.id, bank.bank_index_sync(db), bank.skill_names_sync(db))
+        # Nhận định của mô hình phân loại cho mọi câu (kể cả câu chưa nhận dạng được dạng bài); không có mô hình thì bỏ qua
+        for item, pred in zip(items, classifier.predict([i["raw_text"] for i in items]) or []):
+            item["ai"] = pred
         src.progress = 4
         db.commit()
 

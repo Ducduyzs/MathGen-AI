@@ -331,6 +331,8 @@ export interface ExtractedItem {
   /** Phương án trong đề khớp với lời giải (nếu đề có A/B/C/D). */
   matched_choice: string | null;
   rules: RuleOption[];
+  /** Nhận định của mô hình phân loại (null nếu máy chủ chưa bật mô hình). */
+  ai?: ClassifierPrediction | null;
 }
 
 export interface IngestionStats {
@@ -973,4 +975,28 @@ export interface QualityReport {
   crawl_jobs: number;
   crawl_submitted: number;
   crawl_pages: QualityCount[];
+  classifier: ClassifierStatus;
+}
+
+// ---- Mô hình phân loại đề (XLM-R): chủ đề, cấp lớp, lớp, độ khó
+
+export interface ClassifierPrediction {
+  topic: string;
+  topic_label: string;
+  topic_confidence: number;
+  grade_band: string;
+  grade_band_label: string;
+  grade_band_confidence: number;
+  grade: number | null;
+  grade_confidence: number;
+  difficulty: number;
+  level: string;
+}
+
+export interface ClassifierStatus {
+  available: boolean;
+  loaded: boolean;
+  reason: string | null;
+  base_model: string | null;
+  real_test: { n?: number; topic_acc?: number; grade_band_acc?: number; grade_acc?: number; grade_within_1?: number; difficulty_spearman?: number };
 }

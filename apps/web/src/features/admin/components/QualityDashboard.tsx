@@ -169,6 +169,17 @@ export function QualityDashboard() {
         </div>
       </div>
 
+      <Section
+        title="Mô hình phân loại đề (AI)"
+        description={
+          q.classifier.available
+            ? `${q.classifier.base_model} · ${q.classifier.loaded ? "đã nạp" : "nạp khi cần"} · trên ${q.classifier.real_test.n ?? "?"} đề thật: chủ đề ${pct(q.classifier.real_test.topic_acc)}, cấp lớp ${pct(q.classifier.real_test.grade_band_acc)}, lớp đúng / lệch ≤ 1: ${pct(q.classifier.real_test.grade_acc)} / ${pct(q.classifier.real_test.grade_within_1)}`
+            : `Đang tắt: ${q.classifier.reason}`
+        }
+      >
+        <p className="text-sm text-muted">Mỗi câu của đề tải lên / thu thập được gắn nhận định chủ đề, lớp, mức độ; hiện cạnh câu và trong hàng chờ duyệt.</p>
+      </Section>
+
       <Section title="Bộ gom" description={`${q.crawl_sources} nguồn (${q.crawl_active_sources} đang bật) · ${q.crawl_jobs} lượt thu thập · ${q.crawl_submitted} câu đã gửi duyệt · ${q.documents_with_region} tài liệu nhận diện được tỉnh`}>
         <div className="flex items-center gap-2 text-sm text-muted">
           <Globe className="size-4" aria-hidden /> Kết quả trang (lần thu thập gần nhất của mỗi URL)

@@ -2,6 +2,7 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.classifier import service as classifier
 from app.modules.crawler import service as crawler
 from app.modules.ingestion import service as ingestion
 from app.modules.learning import service as learning
@@ -58,4 +59,5 @@ async def report(db: AsyncSession) -> QualityOut:
         recognition_rate=_rate(ing["recognized"], ing["items"]), documents_with_region=ing["with_region"],
         crawl_sources=cr["sources"], crawl_active_sources=cr["active_sources"], crawl_jobs=cr["jobs"], crawl_submitted=cr["submitted"],
         crawl_pages=[Count(key=k, label=PAGE.get(k, k), count=v) for k, v in cr["pages"].items()],
+        classifier=classifier.status(),
     )

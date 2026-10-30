@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn, percent } from "@/lib/utils";
 import type { ExtractedItem } from "@/types/api";
+import { AiChip } from "@/features/classifier";
 import { VariantGenerator } from "./VariantGenerator";
 
 /** Một câu đã tách từ đề: kết quả nhận dạng, lời giải, kiểm chứng, và nút sinh biến thể. */
@@ -26,6 +27,7 @@ export function ItemCard({ item }: { item: ExtractedItem }) {
         ) : (
           <Badge tone="neutral">Chưa hỗ trợ</Badge>
         )}
+        <AiChip prediction={item.ai} />
         {item.duplicate_of && (
           <Badge tone="warning">
             <Copy className="size-3" aria-hidden /> Trùng với {item.duplicate_of}

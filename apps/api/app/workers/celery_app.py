@@ -5,6 +5,7 @@
 """
 
 from celery import Celery
+from celery.signals import worker_ready
 
 from app.core.config import get_settings
 
@@ -20,3 +21,11 @@ celery.conf.update(
     task_default_queue="learning",
     timezone="Asia/Ho_Chi_Minh",
 )
+
+
+@worker_ready.connect
+def _warm_classifier(**_):
+    """Worker ingest phân loại từng câu của đề tải lên: nạp mô hình sẵn khi worker khởi động."""
+    from app.modules.classifier import service as classifier
+
+    classifier.warm_up()

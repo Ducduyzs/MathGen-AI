@@ -44,6 +44,8 @@ class Settings(BaseSettings):
     openai_api_key: str | None = Field(default=None, validation_alias=AliasChoices("OPENAI_API_KEY", "GPT_API_KEY"))
     ocr_gemini_model: str = "gemini-2.5-flash"
     ocr_openai_model: str = "gpt-4.1-mini"
+    #: Mô hình phân loại đề (ml/scripts/export_classifier.py). Để trống = tắt.
+    classifier_dir: str = str(Path(__file__).resolve().parents[2] / "var" / "models" / "classifier")
 
     @property
     def async_database_url(self) -> str:

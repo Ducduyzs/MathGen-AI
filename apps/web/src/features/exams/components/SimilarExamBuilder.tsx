@@ -12,6 +12,7 @@ import { useCreateSource, useSource, useSources } from "@/features/ingestion";
 import { errorMessage } from "@/lib/api/errors";
 import { cn, timeAgo } from "@/lib/utils";
 import type { ExamMode, SimilarExamRequest } from "@/types/api";
+import { AiChip } from "@/features/classifier";
 import { useCreateSimilarExam } from "../api";
 
 const ACCEPT = ".pdf,.docx,.png,.jpg,.jpeg,.txt";
@@ -181,6 +182,7 @@ function SimilarOptions({ sourceId, onBack }: { sourceId: string; onBack: () => 
               <span className="mt-0.5 block text-xs text-muted">
                 {i.status === "recognized" ? i.structure?.kind_label : (i.reason ?? "Dạng này chưa sinh được câu tương tự")}
               </span>
+              <AiChip prediction={i.ai} className="mt-1" />
             </span>
           </li>
         ))}

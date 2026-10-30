@@ -66,3 +66,5 @@ class QualityOut(BaseModel):
     crawl_jobs: int
     crawl_submitted: int
     crawl_pages: list[Count]
+    # Mô hình phân loại đề
+    classifier: dict

@@ -63,6 +63,8 @@ class ExtractedItemOut(BaseModel):
     duplicate_of: str | None
     matched_choice: str | None
     rules: list[RuleOut]
+    # Nhận định của mô hình phân loại (chủ đề, cấp lớp, lớp, độ khó); None nếu chưa bật mô hình
+    ai: dict | None = None
 
 
 class StatsOut(BaseModel):

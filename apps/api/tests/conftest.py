@@ -19,6 +19,8 @@ os.environ.update({
     # Không gọi mô hình đọc ảnh thật trong test (test OCR thay bằng hàm giả)
     "GEMINI_API_KEY": "",
     "OPENAI_API_KEY": "",
+    # Không nạp mô hình phân loại thật trong test (test dùng hàm giả)
+    "CLASSIFIER_DIR": "",
 })
 
 import httpx  # noqa: E402

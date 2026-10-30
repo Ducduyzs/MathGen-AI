@@ -196,6 +196,10 @@ def _review_row(item: dict, provenance: dict) -> dict:
         answer = None
     if not answer:
         checks.append({"label": "Đáp án dạng tập nghiệm / biểu thức: chưa chấm tự động được", "passed": False})
+    if ai := item.get("ai"):
+        grade = f"lớp {ai['grade']}" if ai["grade"] else ai["grade_band_label"]
+        checks.append({"label": f"AI phân loại: {ai['topic_label']} · {grade} · {ai['level']} (tin cậy {round(ai['topic_confidence'] * 100)}%)",
+                       "passed": True})
     return {
         "origin": "extracted", "statement": item["statement"], "answer_display": item["answer_display"], "solution": item["solution"],
         "grade": item["grade"], "skill_code": item["skill"]["code"], "difficulty": item["difficulty"],

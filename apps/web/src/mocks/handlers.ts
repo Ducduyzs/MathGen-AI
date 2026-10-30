@@ -575,6 +575,10 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
   if (route === "GET /exams/templates") return json(TEMPLATES.map(({ make: _m, ...t }) => t));
   if (route === "GET /exams") return json(recentExams(user.id));
   if (route === "POST /exams/similar") return fail(501, "mock_unsupported");
+  if (route === "GET /classifier/status") {
+    return json({ available: false, loaded: false, reason: "Chế độ mock không có mô hình phân loại", base_model: null, real_test: {} });
+  }
+  if (route === "POST /classifier/predict") return fail(503, "classifier_unavailable");
   if (route === "POST /exams") {
     const created = createExam(user.id, (body ?? {}) as CreateExamRequest);
     return created instanceof Response ? created : json(toPublicExam(created), 201);

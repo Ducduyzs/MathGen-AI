@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ClassifyTry } from "@/features/classifier";
 import { SourceList, UploadForm, UploadIntro } from "@/features/ingestion";
 
 export const metadata: Metadata = { title: "Tải tài liệu" };
@@ -13,6 +14,7 @@ export default function UploadsPage() {
         <div className="space-y-5">
           <UploadIntro />
           <SourceList />
+          <ClassifyTry />
         </div>
       </div>
     </div>

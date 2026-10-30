@@ -24,6 +24,8 @@ const MESSAGES: Record<string, string> = {
   grade_required: "Học sinh cần có lớp.",
   unknown_province: "Tỉnh/thành không hợp lệ.",
   unknown_school: "Trường không thuộc tỉnh đã chọn.",
+  no_similar: "Chưa nhận ra câu nào thuộc dạng hệ thống sinh được (hiện hỗ trợ phương trình, bất phương trình, phân tích đa thức, hàm số…).",
+  source_not_ready: "Đề vẫn đang được phân tích. Đợi vài giây rồi thử lại.",
   mock_unsupported: "Chế độ mock chưa hỗ trợ tính năng này. Hãy chạy với backend thật.",
   crawl_one_domain: "Các trang bắt đầu phải cùng một tên miền (mỗi nguồn một tên miền).",
   crawl_out_of_scope: "Trang bắt đầu phải nằm trong các thư mục được phép thu thập.",

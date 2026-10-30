@@ -39,3 +39,5 @@ Teacher = Annotated[User, Depends(require_roles("teacher", "admin"))]
 Student = Annotated[User, Depends(require_roles("student"))]
 Parent = Annotated[User, Depends(require_roles("parent"))]
 Admin = Annotated[User, Depends(require_roles("admin"))]
+# Tải đề lên để phân tích / tự tạo đề tương tự (mỗi người chỉ thấy tài liệu của mình)
+Learner = Annotated[User, Depends(require_roles("student", "teacher", "admin"))]

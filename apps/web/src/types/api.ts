@@ -270,6 +270,14 @@ export interface SchoolInfo {
   problems: number;
 }
 
+export interface SimilarExamRequest {
+  source_id: string;
+  /** Số câu tương tự sinh cho mỗi câu nhận dạng được (1–3). */
+  per_question: number;
+  mode: ExamMode;
+  target: "easier" | "same" | "harder";
+}
+
 export interface SubmitExamRequest {
   answers: Record<string, ExamAnswer>;
 }

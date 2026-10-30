@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpenCheck, GraduationCap } from "lucide-react";
+import { BookOpenCheck, GraduationCap, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ExamBuilder } from "./ExamBuilder";
 import { OfficialExamCard } from "./OfficialExamCard";
+import { SimilarExamBuilder } from "./SimilarExamBuilder";
 
 const TABS = [
   { key: "practice", label: "Đề ôn tập", hint: "Tự chọn số câu, chủ đề", icon: BookOpenCheck },
   { key: "official", label: "Đề thi", hint: "Chuẩn cấu trúc Bộ GD&ĐT", icon: GraduationCap },
+  { key: "similar", label: "Từ đề thầy cô", hint: "Chụp đề, sinh đề tương tự", icon: Wand2 },
 ] as const;
 
 export function ExamHub() {
@@ -16,7 +18,7 @@ export function ExamHub() {
 
   return (
     <div className="space-y-5">
-      <div role="tablist" aria-label="Loại đề" className="grid grid-cols-2 gap-2 rounded-2xl bg-brand-50 p-1.5 sm:inline-grid sm:w-auto">
+      <div role="tablist" aria-label="Loại đề" className="grid grid-cols-1 gap-2 rounded-2xl bg-brand-50 p-1.5 min-[480px]:grid-cols-3 sm:inline-grid sm:w-auto">
         {TABS.map((t) => {
           const selected = t.key === tab;
           return (
@@ -42,7 +44,7 @@ export function ExamHub() {
         })}
       </div>
 
-      <div role="tabpanel">{tab === "practice" ? <ExamBuilder /> : <OfficialExamCard />}</div>
+      <div role="tabpanel">{tab === "practice" ? <ExamBuilder /> : tab === "official" ? <OfficialExamCard /> : <SimilarExamBuilder />}</div>
     </div>
   );
 }

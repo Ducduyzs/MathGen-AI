@@ -17,8 +17,9 @@ from app.modules.exams.generator import (
 )
 from app.modules.exams.models import Exam, ExamQuestion
 from app.modules.exams.schemas import (
-    CreateExamIn, ExamOut, ExamQuestionOut, ExamResult, ExamSummary, SubmitExamIn, TemplateInfo, TemplateRef,
+    CreateExamIn, ExamOut, ExamQuestionOut, ExamResult, ExamSummary, SimilarExamIn, SubmitExamIn, TemplateInfo, TemplateRef,
 )
+from app.modules.ingestion import service as ingestion
 from app.modules.learning import service as learning
 from app.modules.learning.grading import same_number
 from app.modules.problem_bank import service as bank
@@ -280,7 +281,7 @@ def grade_exam(exam: Exam, qs: list[ExamQuestion], answers: dict[str, dict], now
     else:
         # Đề ôn tập: các câu bằng điểm nhau, quy về thang 10
         score = round2(sum(pts, Fraction(0)) / len(qs) * 10)
-    # Câu thật của ngân hàng (đề theo khu vực) không thuộc dạng bài sinh được nên không vào "ôn dạng đã sai"
+    # Câu thật (đề theo khu vực) và câu tương tự (từ đề tải lên) không thuộc dạng bài sinh được nên không vào "ôn dạng đã sai"
     wrong = {q.template_code: TemplateRef(code=q.template_code, name=q.template_name) for q, p in zip(qs, pts) if p != 1 and q.template_code in BY_CODE}
     return ExamResult(correct=sum(p == 1 for p in pts), total=len(qs), score=score, parts=parts, items=items,
                       wrong_templates=list(wrong.values()), submitted_at=now)
@@ -302,4 +303,49 @@ async def submit(db: AsyncSession, user: User, exam_id: str, body: SubmitExamIn)
     await db.commit()
     # Sau khi commit mới đẩy task: worker cập nhật điểm kỹ năng (trọng số nhỏ hơn luyện tập từng bài)
     learning.schedule_exam_scores(user.id, [(q.skill_code, i.is_correct) for q, i in zip(qs, result.items)])
+    return await _out(db, exam, qs)
+
+
+
+SIMILAR_TEMPLATE = "similar"
+SIMILAR_MAX = 60
+
+
+async def create_similar(db: AsyncSession, user: User, body: SimilarExamIn) -> ExamOut:
+    """Đề tương tự: mỗi câu đã nhận dạng trong đề thầy cô cho → vài câu cùng dạng, đổi số liệu, có đáp án và lời giải.
+
+    Trắc nghiệm: biến thể dạng A/B/C/D. Tự luận: biến thể trả lời ngắn (một đáp số); dạng không có đáp số (tập nghiệm, nhân tử)
+    thì chuyển sang trắc nghiệm để vẫn chấm tự động được.
+    """
+    name, items, total = await ingestion.recognized_items(db, user, body.source_id)
+    if not items:
+        raise ApiError(422, "no_similar")
+    from app.modules.ingestion.pipeline.structure import KIND_SKILL
+
+    index = await bank.bank_index(db)
+    rows: list[dict] = []
+    for item, s in items:
+        variants = []
+        if body.mode == "written":
+            variants = ingestion.similar_variants(s, body.per_question, body.target, "short", index)
+            variants = [v for v in variants if v.answer and v.answer["type"] == "number"]
+        if not variants:
+            variants = ingestion.similar_variants(s, body.per_question, body.target, "choice", index)
+            variants = [v for v in variants if v.answer and v.answer["type"] == "choice"]
+        skill, grade = KIND_SKILL[s.kind]
+        for v in variants[: body.per_question]:
+            rows.append({
+                "type": v.answer["type"], "template_code": SIMILAR_TEMPLATE, "template_name": f"Tương tự câu {item['index']}",
+                "skill_code": skill, "grade": grade, "difficulty": v.difficulty, "statement": v.statement,
+                "choices": v.choices or None, "statements": None, "answer_prefix": v.answer_prefix, "answer": v.answer,
+                "answer_display": v.answer_display, "solution": v.solution, "tolerance": None,
+            })
+    if not rows:
+        raise ApiError(422, "no_similar")
+    rows = rows[:SIMILAR_MAX]
+    mode = "choice" if all(r["type"] == "choice" for r in rows) else "written"
+    now = datetime.now(UTC)
+    title = f"Đề tương tự · {name[:60]} · {len(rows)} câu (từ {len(items)}/{total} câu nhận dạng được)"
+    exam, qs = add_exam(db, user, title, "practice", mode, rows, None, None, now)
+    await db.commit()
     return await _out(db, exam, qs)

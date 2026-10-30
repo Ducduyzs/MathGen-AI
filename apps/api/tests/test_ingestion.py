@@ -112,8 +112,11 @@ async def upload(client, headers, name: str, data: bytes) -> str:
     return u["file_key"]
 
 
-async def test_hoc_sinh_khong_dung_duoc(client, student):
-    assert (await client.get("/api/ingestion/sources", headers=student)).status_code == 403
+async def test_hoc_sinh_tai_de_duoc_nhung_khong_sinh_bien_the_gui_duyet(client, student):
+    # Học sinh tải đề của thầy cô lên để tự tạo đề tương tự; sinh biến thể / gửi duyệt vẫn chỉ giáo viên
+    assert (await client.get("/api/ingestion/sources", headers=student)).status_code == 200
+    assert (await client.post("/api/generation/variants", json={}, headers=student)).status_code == 403
+    assert (await client.post("/api/generation/variants/submit", json={"variant_ids": ["x"]}, headers=student)).status_code == 403
 
 
 async def test_kiem_tra_file(client, teacher):

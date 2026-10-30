@@ -574,6 +574,7 @@ export async function handleMock(req: Request, path: string[]): Promise<Response
   // ---- Làm đề
   if (route === "GET /exams/templates") return json(TEMPLATES.map(({ make: _m, ...t }) => t));
   if (route === "GET /exams") return json(recentExams(user.id));
+  if (route === "POST /exams/similar") return fail(501, "mock_unsupported");
   if (route === "POST /exams") {
     const created = createExam(user.id, (body ?? {}) as CreateExamRequest);
     return created instanceof Response ? created : json(toPublicExam(created), 201);

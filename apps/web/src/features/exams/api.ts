@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { progressKeys } from "@/features/progress";
 import { ApiError } from "@/lib/api/errors";
 import { apiFetch } from "@/lib/api/http";
-import type { CreateExamRequest, Exam, ExamSummary, Skill, SubmitExamRequest } from "@/types/api";
+import type { CreateExamRequest, Exam, SimilarExamRequest, ExamSummary, Skill, SubmitExamRequest } from "@/types/api";
 
 export const examKeys = {
   all: ["exams"] as const,
@@ -32,6 +32,18 @@ export function useExam(id: string) {
     queryKey: examKeys.detail(id),
     queryFn: () => apiFetch<Exam>(`/api/exams/${encodeURIComponent(id)}`),
     staleTime: Infinity,
+  });
+}
+
+/** Đề tương tự từ đề thầy cô cho (tài liệu đã tải lên và phân tích). */
+export function useCreateSimilarExam() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: SimilarExamRequest) => apiFetch<Exam>("/api/exams/similar", { method: "POST", body }),
+    onSuccess: (exam) => {
+      queryClient.setQueryData(examKeys.detail(exam.id), exam);
+      void queryClient.invalidateQueries({ queryKey: examKeys.list });
+    },
   });
 }
 

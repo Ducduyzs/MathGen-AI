@@ -109,6 +109,11 @@ tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, 
 - **Khóa tài khoản** (`users.disabled_at`): chặn ở đăng nhập, làm mới phiên và mọi request (`current_user`); khóa hoặc đặt lại mật khẩu
   thì thu hồi mọi refresh token. Quản trị viên không tự đổi vai trò / tự khóa được và luôn còn ít nhất một quản trị viên hoạt động.
 - **Bài nghi sai đáp án** (`learning.suspicious_problems`): từ 5 lượt làm mà tỉ lệ đúng ≤ 25%.
+- **Đề tương tự:** học sinh tải đề lên (`/api/ingestion/sources`, tài liệu riêng của mình) → pipeline nhận dạng → mỗi câu nhận dạng
+  được sinh 1–3 biến thể cùng dạng (đổi số liệu, kiểm chứng lại). Tự luận: trả lời ngắn; dạng không có một đáp số (tập nghiệm) đổi sang
+  câu hỏi có đáp số hoặc trắc nghiệm để vẫn chấm tự động. Sinh biến thể / gửi duyệt vào ngân hàng vẫn chỉ giáo viên.
+- **OCR** (`ingestion/pipeline/ocr.py`): ảnh và PDF không có lớp chữ gửi tới Gemini (đọc cả PDF), GPT dự phòng cho ảnh; kết quả theo
+  quy ước của pipeline ("Câu 1.", "A.", x^2). Khóa: `GEMINI_API_KEY` / `OPENAI_API_KEY` trong `.env`.
 - **Rank Đấu trường** (`arena/ranks.py`): một bảng rank chung; lượt từ 3 câu được cộng/trừ theo điểm/phút so với mức
   chuẩn của bậc hiện tại (lượt dài tính nặng hơn), ghi `arena_runs.rank_delta` một lần khi lượt kết thúc.
 - **Bàn tròn vũ trụ:** trạng thái phòng là JSON trong Redis (TTL 3 giờ), mọi thay đổi chạy dưới khóa Redis của phòng.
@@ -133,6 +138,7 @@ tests/               pytest (auth, ngân hàng bài, luyện tập, làm đề, 
 | M3.11 | Bộ gom đề từ nguồn được phép (`/api/crawler`, trang quản trị Nguồn dữ liệu) | ✅ |
 | M3.12 | Khu vực: tỉnh/trường cho đề thu thập, đề theo khu vực, lọc ngân hàng theo tỉnh (`/api/regions`) | ✅ |
 | M3.13 | Quản trị: người dùng (`/api/admin/users`: tạo, đổi vai trò, khóa, đặt lại mật khẩu) và chất lượng (`/api/admin/quality`) | ✅ |
+| M3.14 | Tự tạo đề tương tự (`POST /api/exams/similar`): học sinh tải đề thầy cô cho (ảnh, PDF, Word, chữ), OCR ảnh / PDF scan bằng Gemini | ✅ |
 | M4 | OCR ảnh/PDF scan (Mathpix/Pix2Text), lưu file trên R2, mô hình phân loại thay luật nhận dạng | chưa |
 
 **Hạn chế hiện tại:** ảnh và PDF scan báo lỗi "cần OCR". Biến thể dạng "giữ như đề gốc" có đáp án là tập nghiệm của bất phương trình hoặc biểu thức

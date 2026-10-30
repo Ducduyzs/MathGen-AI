@@ -3,7 +3,7 @@
 - txt / md / tex: đọc UTF-8.
 - docx: đọc word/document.xml bằng zipfile (không cần thư viện ngoài).
 - pdf: pypdf; PDF scan (không có lớp chữ) cần OCR.
-- Ảnh: cần OCR công thức (Mathpix / Pix2Text) — chưa cấu hình, báo lỗi rõ ràng thay vì đoán.
+- Ảnh và PDF scan: OCR bằng mô hình đọc ảnh (pipeline/ocr.py: Gemini, GPT dự phòng).
 """
 
 import io
@@ -59,9 +59,30 @@ def _pdf_text(data: bytes) -> str:
         text = "\n".join(page.extract_text() or "" for page in reader.pages[:50])
     except PdfReadError as e:
         raise ExtractError("unsupported_file", "File PDF bị hỏng hoặc được mã hóa.") from e
-    if not text.strip():
-        raise ExtractError("ocr_required", "PDF không có lớp chữ (bản scan), cần OCR.")
+    if not text.strip():  # bản scan: đọc bằng mô hình đọc ảnh
+        return _ocr(data, "application/pdf")
     return text
+
+
+def _ocr(data: bytes, mime: str) -> str:
+    from app.modules.ingestion.pipeline import ocr
+
+    if not ocr.available():
+        raise ExtractError("ocr_required", "Ảnh / PDF scan cần OCR: máy chủ chưa cấu hình khóa mô hình đọc ảnh (GEMINI_API_KEY).")
+    try:
+        return OCR(data, mime)
+    except ocr.OcrError as e:
+        raise ExtractError("ocr_failed", f"Không đọc được ảnh đề ({e}). Thử ảnh rõ hơn hoặc dán chữ vào.") from e
+
+
+def _default_ocr(data: bytes, mime: str) -> str:
+    from app.modules.ingestion.pipeline import ocr
+
+    return ocr.recognize(data, mime)
+
+
+# Test thay bằng hàm giả (không gọi mạng)
+OCR = _default_ocr
 
 
 def extract_text(name: str, data: bytes) -> str:
@@ -73,7 +94,7 @@ def extract_text(name: str, data: bytes) -> str:
     if ext == "pdf":
         return _pdf_text(data)
     if ext in ("png", "jpg", "jpeg"):
-        raise ExtractError("ocr_required", "Ảnh đề thi cần OCR công thức (Mathpix/Pix2Text), chưa được cấu hình trên máy chủ.")
+        return _ocr(data, "image/png" if ext == "png" else "image/jpeg")
     raise ExtractError("unsupported_file", "Định dạng file chưa được hỗ trợ.")
 
 

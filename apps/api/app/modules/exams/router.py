@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from app.core.deps import CurrentUser, Db
 from app.modules.exams import service
-from app.modules.exams.schemas import CreateExamIn, ExamOut, ExamSummary, SubmitExamIn, TemplateInfo
+from app.modules.exams.schemas import SimilarExamIn, CreateExamIn, ExamOut, ExamSummary, SubmitExamIn, TemplateInfo
 
 router = APIRouter(prefix="/exams", tags=["exams"])
 
@@ -20,6 +20,12 @@ async def recent_exams(db: Db, user: CurrentUser):
 @router.post("", response_model=ExamOut, status_code=201)
 async def create_exam(body: CreateExamIn, db: Db, user: CurrentUser):
     return await service.create(db, user, body)
+
+
+@router.post("/similar", response_model=ExamOut, status_code=201)
+async def create_similar(body: SimilarExamIn, db: Db, user: CurrentUser):
+    """Tự tạo đề tương tự từ đề thầy cô cho (đã tải lên qua /ingestion/sources)."""
+    return await service.create_similar(db, user, body)
 
 
 @router.get("/{exam_id}", response_model=ExamOut)

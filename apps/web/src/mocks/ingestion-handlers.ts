@@ -117,7 +117,8 @@ export async function handleStorageUpload(req: Request, key: string) {
 export async function handleIngestion(req: Request, path: string[], body: unknown, ctx: IngestionContext): Promise<Response | null> {
   const route = `${req.method} /${path.join("/")}`;
   if (!route.includes("/ingestion") && !route.includes("/generation")) return null;
-  if (ctx.role === "student") return fail(403, "forbidden");
+  // Học sinh tải đề lên để tự tạo đề tương tự; sinh biến thể / gửi duyệt chỉ giáo viên
+  if (ctx.role === "student" && route.includes("/generation")) return fail(403, "forbidden");
   const s = st();
 
   if (route === "POST /ingestion/upload-url") {

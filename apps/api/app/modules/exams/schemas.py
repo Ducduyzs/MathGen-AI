@@ -39,6 +39,15 @@ class CreateExamIn(BaseModel):
     school_id: str | None = Field(default=None, max_length=26)
 
 
+class SimilarExamIn(BaseModel):
+    """Tự tạo đề tương tự từ đề thầy cô cho (đã tải lên và phân tích)."""
+
+    source_id: str = Field(max_length=26)
+    per_question: int = Field(default=2, ge=1, le=3)
+    mode: Literal["choice", "written"] = "written"
+    target: Literal["easier", "same", "harder"] = "same"
+
+
 class SubmitExamIn(BaseModel):
     answers: dict[Annotated[str, Field(max_length=40)], ExamAnswer] = Field(max_length=200)
 

@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query, Request
 
-from app.core.deps import Db, Teacher
+from app.core.deps import Db, Learner, Teacher
 from app.core.errors import ApiError
 from app.modules.ingestion import service
 from app.modules.ingestion.pipeline.extract import MAX_UPLOAD_BYTES
@@ -14,7 +14,7 @@ router = APIRouter(tags=["ingestion"])
 
 
 @router.post("/ingestion/upload-url", response_model=UploadUrlOut)
-async def upload_url(body: UploadUrlIn, db: Db, user: Teacher):
+async def upload_url(body: UploadUrlIn, db: Db, user: Learner):
     return await service.create_upload_url(db, user, body)
 
 
@@ -31,17 +31,17 @@ async def put_file(key: str, request: Request, db: Db, exp: Annotated[int, Query
 
 
 @router.post("/ingestion/sources", response_model=SourceOut, status_code=201)
-async def create_source(body: CreateSourceIn, db: Db, user: Teacher):
+async def create_source(body: CreateSourceIn, db: Db, user: Learner):
     return await service.create_source(db, user, body)
 
 
 @router.get("/ingestion/sources", response_model=list[SourceSummaryOut])
-async def list_sources(db: Db, user: Teacher):
+async def list_sources(db: Db, user: Learner):
     return await service.list_sources(db, user)
 
 
 @router.get("/ingestion/sources/{source_id}", response_model=SourceOut)
-async def get_source(source_id: str, db: Db, user: Teacher):
+async def get_source(source_id: str, db: Db, user: Learner):
     return await service.get_source(db, user, source_id)
 
 

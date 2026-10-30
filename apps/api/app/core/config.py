@@ -2,6 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Tham số chỉ dành cho công cụ khác (Prisma: pgbouncer=true…) — driver Python không hiểu nên bỏ đi.
@@ -38,6 +39,11 @@ class Settings(BaseSettings):
     daily_goal: int = 5
     #: Thư mục lưu file tải lên khi dev (production: R2/S3)
     upload_dir: str = str(Path(__file__).resolve().parents[2] / "var" / "uploads")
+    #: OCR ảnh / PDF scan bằng mô hình đọc ảnh. Gemini đọc được cả PDF; GPT dùng dự phòng cho ảnh.
+    gemini_api_key: str | None = Field(default=None, validation_alias=AliasChoices("GEMINI_API_KEY", "Gemini"))
+    openai_api_key: str | None = Field(default=None, validation_alias=AliasChoices("OPENAI_API_KEY", "GPT_API_KEY"))
+    ocr_gemini_model: str = "gemini-2.5-flash"
+    ocr_openai_model: str = "gpt-4.1-mini"
 
     @property
     def async_database_url(self) -> str:

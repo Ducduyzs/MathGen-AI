@@ -15,6 +15,7 @@ from app.core.ids import new_id
 from app.modules.ingestion import storage, tasks
 from app.modules.ingestion.models import GeneratedVariant, IngestionSource, Upload
 from app.modules.ingestion.pipeline import Structure, generate_variants, hash_key
+from app.modules.ingestion.pipeline.generate import rules_for
 from app.modules.ingestion.pipeline.extract import ALLOWED_EXTENSIONS, MAX_UPLOAD_BYTES, extension
 from app.modules.ingestion.pipeline.structure import KIND_SKILL
 from app.modules.ingestion.schemas import (
@@ -240,3 +241,19 @@ async def quality_stats(db: AsyncSession, recent: int = 300) -> dict:
         "recognized": sum(i["status"] == "recognized" for i in items), "duplicates": sum(bool(i["duplicate_of"]) for i in items),
         "with_region": sum(bool((s.region or {}).get("province_code")) for s in done),
     }
+
+
+
+async def recognized_items(db: AsyncSession, user: User, source_id: str) -> tuple[str, list[tuple[dict, Structure]], int]:
+    """(tên tài liệu, các câu đã nhận dạng kèm cấu trúc, tổng số câu tách được) của tài liệu thuộc về người dùng."""
+    src = await _owned(db, user, source_id)
+    if src.status != "done":
+        raise ApiError(409, "source_not_ready")
+    items = [(i, Structure.from_json(i["_structure"])) for i in src.items if i["status"] == "recognized" and i.get("_structure")]
+    return src.name, items, len(src.items)
+
+
+def similar_variants(s: Structure, count: int, target: str, fmt: str, bank_index: dict[str, str]) -> list:
+    """Biến thể cùng dạng (đổi số liệu theo mọi luật áp dụng được), chỉ lấy biến thể đạt kiểm chứng."""
+    codes = [r["code"] for r in rules_for(s.kind)]
+    return [v for v in generate_variants(s, count, codes, target, fmt, bank_index, {}) if v.accepted]

@@ -16,6 +16,9 @@ os.environ.update({
     "DATABASE_PGBOUNCER": "false",
     "REDIS_URL": "redis://localhost:6379/15",
     "CELERY_EAGER": "true",
+    # Không gọi mô hình đọc ảnh thật trong test (test OCR thay bằng hàm giả)
+    "GEMINI_API_KEY": "",
+    "OPENAI_API_KEY": "",
 })
 
 import httpx  # noqa: E402

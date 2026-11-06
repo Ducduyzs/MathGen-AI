@@ -117,7 +117,7 @@ export const RULES: RuleDef[] = [
     },
   },
   {
-    code: "nhan_he_so", label: "Nhân hai vế với một số", description: "Bài tương đương với bài gốc, dùng để kiểm tra bộ chống trùng (sẽ bị loại).", kinds: ["quadratic_equation", "linear_equation"],
+    code: "nhan_he_so", label: "Nhân hai vế với một số", description: "Bài tương đương với bài gốc, dùng để kiểm tra bộ chống trùng (sẽ bị loại).", kinds: ["quadratic_equation"],
     make: (s) => {
       const k = pick([2, 3, -2]);
       return { structure: { ...s, P: scaleP(s.P, q(k)), ask: "solve" }, transform: `Nhân hai vế với $${k}$ (bài tương đương)` };
@@ -333,7 +333,7 @@ function buildVariant(draft: Draft, rule: RuleDef, format: Format, idx: DedupeIn
   }
 
   const key = canonicalKey(s);
-  const srcDup = idx.source.get(key);
+  const srcDup = idx.source.get(key) ?? idx.source.get(key.split("#")[0]);
   const bankDup = idx.bank.get(key);
   const checks: VerificationCheck[] = [
     { label: "Kiểm chứng ngược: đọc lại đề vừa sinh, nhận dạng và giải lại cho cùng đáp án", passed: roundTrip },

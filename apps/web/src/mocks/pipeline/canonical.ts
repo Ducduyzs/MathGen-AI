@@ -8,7 +8,7 @@ import { REL_LATEX, type Structure } from "./structure";
 const FLIP: Record<Rel, Rel> = { "=": "=", "<": ">", ">": "<", "<=": ">=", ">=": "<=" };
 
 /** Quy đồng → chia ước chung → hệ số đầu dương. Trả về các hạng tử nguyên và việc có đổi dấu hay không. */
-function integerForm(P: Poly) {
+function integerForm(P: Poly, reduce = true) {
   const list = [...P].sort(([a], [b]) => {
     const [xa, ma] = a.split(",").map(Number);
     const [xb, mb] = b.split(",").map(Number);
@@ -16,7 +16,7 @@ function integerForm(P: Poly) {
   });
   const L = list.reduce((acc, [, c]) => lcm(acc, c.d), 1);
   let ints = list.map(([k, c]) => [k, (c.n * L) / c.d] as [string, number]);
-  const G = ints.reduce((g, [, v]) => gcd(g, v), 0) || 1;
+  const G = reduce ? ints.reduce((g, [, v]) => gcd(g, v), 0) || 1 : 1;
   ints = ints.map(([k, v]) => [k, v / G]);
   const flipped = (ints[0]?.[1] ?? 0) < 0;
   if (flipped) ints = ints.map(([k, v]) => [k, -v]);
@@ -27,8 +27,14 @@ const enc = (ints: [string, number][]) => ints.map(([k, v]) => `${k}:${v}`).join
 const raw = (P: Poly) => [...P].sort(([a], [b]) => a.localeCompare(b)).map(([k, c]) => `${k}:${plain(c)}`).join("|");
 
 export function canonicalKey(s: Structure): string {
+  const key = mathKey(s);
+  return s.ask === "solve" ? key : `${key}#${s.ask}`;
+}
+
+function mathKey(s: Structure): string {
   switch (s.kind) {
     case "linear_equation":
+      return `eq:${enc(integerForm(s.P, false).ints)}`;
     case "quadratic_equation":
       return `eq:${enc(integerForm(s.P).ints)}`;
     case "quadratic_param":

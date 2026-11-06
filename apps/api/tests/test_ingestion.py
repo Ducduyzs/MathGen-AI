@@ -210,3 +210,17 @@ def test_khong_doc_file_ngoai_thu_muc():
     with pytest.raises(ValueError):
         storage.read("../../.env")
     assert Path(storage.__file__).exists()
+
+
+def test_chong_trung_phan_biet_cach_hoi_va_giu_tuong_duong():
+    from app.modules.ingestion.pipeline import problem_key as k
+
+    # Khác cách hỏi hoặc khác thao tác: hai bài khác nhau
+    assert k("Phân tích đa thức $x^2 - 25$ thành nhân tử.") != k("Biết $x^2 - 25 = (x - a)(x - b)$ với $a < b$. Tìm $b$.")
+    assert k("Giải phương trình $5x = 15$.") != k("Giải phương trình $x + 2 = 5$.")
+    assert k("Tìm $x$, biết: $x \times 5 = 15$") != k("Giải phương trình $x + 2 = 5$.")
+    # Cùng bài viết khác đi: vẫn là một
+    assert k("Giải phương trình $x^2 + 2x - 3 = 0$.") == k("Giải phương trình $2x + x^2 = 3$.")
+    assert k("Giải phương trình $2x^2 - 10x + 12 = 0$.") == k("Giải phương trình $x^2 - 5x + 6 = 0$.")
+    assert k("Giải phương trình $x + 2 = 5$.") == k("Giải phương trình $2 + x = 5$.")
+    assert k("Phân tích đa thức $x^2 - 25$ thành nhân tử.") == k("Phân tích đa thức $-25 + x^2$ thành nhân tử.")

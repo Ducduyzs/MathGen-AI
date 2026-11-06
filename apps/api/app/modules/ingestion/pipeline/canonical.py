@@ -12,8 +12,8 @@ from app.modules.ingestion.pipeline.poly import Poly, coeffs_x, deg_m, deg_x, pl
 from app.modules.ingestion.pipeline.structure import FLIP, REL_LATEX, Structure
 
 
-def _integer_form(P: Poly) -> tuple[list[tuple[tuple[int, int], int]], bool]:
-    """Quy đồng → chia ước chung → hệ số đầu dương. Trả về các hạng tử nguyên và việc có đổi dấu hay không."""
+def _integer_form(P: Poly, reduce: bool = True) -> tuple[list[tuple[tuple[int, int], int]], bool]:
+    """Quy đồng → chia ước chung (nếu `reduce`) → hệ số đầu dương. Trả về các hạng tử nguyên và việc có đổi dấu hay không."""
     items = sorted(P.items(), key=lambda kv: (-kv[0][0], -kv[0][1]))
     L = 1
     for _, c in items:
@@ -22,7 +22,7 @@ def _integer_form(P: Poly) -> tuple[list[tuple[tuple[int, int], int]], bool]:
     G = 0
     for _, v in ints:
         G = math.gcd(G, v)
-    G = G or 1
+    G = (G or 1) if reduce else 1
     ints = [(k, v // G) for k, v in ints]
     flipped = bool(ints) and ints[0][1] < 0
     if flipped:
@@ -39,8 +39,17 @@ def _raw(P: Poly) -> str:
 
 
 def canonical_key(s: Structure) -> str:
+    """Cùng biểu thức nhưng khác cách hỏi là hai bài khác nhau: "Phân tích x² − 25" và "x² − 25 = (x − a)(x − b), tìm b"."""
+    key = _math_key(s)
+    return key if s.ask == "solve" else f"{key}#{s.ask}"
+
+
+def _math_key(s: Structure) -> str:
     match s.kind:
-        case "linear_equation" | "quadratic_equation":
+        case "linear_equation":
+            # Không chia ước chung: 5x = 15 (phải chia) và x + 2 = 5 (phải chuyển vế) là hai bài khác nhau dù cùng nghiệm
+            return f"eq:{_enc(_integer_form(s.P, reduce=False)[0])}"
+        case "quadratic_equation":
             return f"eq:{_enc(_integer_form(s.P)[0])}"
         case "quadratic_param":
             return f"par:{s.cond}:{_enc(_integer_form(s.P)[0])}"

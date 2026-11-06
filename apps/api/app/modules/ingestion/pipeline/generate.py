@@ -151,7 +151,7 @@ def _(s, r, g):
 
 
 @rule("nhan_he_so", "Nhân hai vế với một số", "Bài tương đương với bài gốc, dùng để kiểm tra bộ chống trùng (sẽ bị loại).",
-      "quadratic_equation", "linear_equation")
+      "quadratic_equation")
 def _(s, r, g):
     k = g.pick([2, 3, -2])
     return Draft(replace(s, P=scale_p(s.P, Fraction(k)), ask="solve"), f"Nhân hai vế với ${k}$ (bài tương đương)")
@@ -370,7 +370,8 @@ def _build_variant(draft: Draft, r: Rule, fmt: Format, bank: dict[str, str], sou
             round_trip = False
 
     key = canonical_key(s)
-    src_dup, bank_dup = source.get(key), bank.get(hash_key(key))  # bank: mã băm → mã bài
+    # Bài gốc so cả phần biểu thức: định dạng "short" đổi cách hỏi nhưng vẫn là chính bài gốc
+    src_dup, bank_dup = source.get(key) or source.get(key.split("#")[0]), bank.get(hash_key(key))  # bank: mã băm → mã bài
     checks = [
         {"label": "Kiểm chứng ngược: đọc lại đề vừa sinh, nhận dạng và giải lại cho cùng đáp án", "passed": round_trip},
         *solved.checks,

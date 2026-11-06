@@ -144,7 +144,7 @@ export default function HomePage() {
         <div className="flex flex-col items-center gap-5 rounded-3xl border border-brand-200 bg-linear-to-r from-brand-50 to-brand-100 px-6 py-12 text-center">
           <h2 className="text-2xl font-bold text-ink sm:text-3xl">Sẵn sàng luyện tập?</h2>
           <p className="max-w-xl text-muted">Tạo tài khoản miễn phí, hệ thống sẽ chọn bài phù hợp với năng lực của bạn.</p>
-          <Link href="/register" className={buttonClasses({ size: "lg" })}>
+          <Link href="/register" scroll={false} className={buttonClasses({ size: "lg" })}>
             Tạo tài khoản <ArrowRight className="size-4" aria-hidden />
           </Link>
         </div>

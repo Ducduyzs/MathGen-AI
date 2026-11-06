@@ -45,10 +45,10 @@ export function PublicHeader() {
             </Link>
           ) : status === "guest" ? (
             <>
-              <Link href="/login" className={buttonClasses({ variant: "ghost", size: "sm" })}>
+              <Link href="/login" scroll={false} className={buttonClasses({ variant: "ghost", size: "sm" })}>
                 Đăng nhập
               </Link>
-              <Link href="/register" className={buttonClasses({ size: "sm" })}>
+              <Link href="/register" scroll={false} className={buttonClasses({ size: "sm" })}>
                 Đăng ký
               </Link>
             </>

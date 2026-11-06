@@ -22,6 +22,7 @@ from pathlib import Path
 import httpx
 from sqlalchemy import select
 
+import app.main  # noqa: F401  (nạp mọi model để SQLAlchemy nhận đủ khóa ngoại khi ghi)
 from app.core.db import SessionLocal, engine
 from app.core.errors import ApiError
 from app.modules.ingestion.pipeline.solve import SolveError, solve

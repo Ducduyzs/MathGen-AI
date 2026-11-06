@@ -229,6 +229,16 @@ function CandidatePanel({ item }: { item: ReviewItem }) {
         <ProblemMeta grade={item.grade} skill={item.skill} difficulty={item.difficulty} />
       </div>
       <MathText text={item.statement} className="mt-4 block text-lg leading-relaxed" />
+      {!!item.choices?.length && (
+        <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
+          {item.choices.map((c) => (
+            <li key={c.key} className="rounded-lg border border-line px-3 py-2">
+              <span className="font-semibold text-ink">{c.key}. </span>
+              <MathText text={c.content} />
+            </li>
+          ))}
+        </ul>
+      )}
       <p className="mt-4 rounded-xl bg-brand-50 px-4 py-3">
         <span className="text-sm font-semibold text-brand-800">Đáp án: </span>
         <MathText text={item.answer_display} />
